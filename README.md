@@ -3,3 +3,7 @@ A visualization of air quality data combined with UFO sightings in the United St
 
 ## Interactive Webpage
 The current published version of the project can be accessed at https://kyles22.github.io/Air-Quality-Impact-On-UFO-Sightings/
+
+## Devloper Information
+
+The project is developed using the d3.js libraries for creating interactive svg data visualizations.
