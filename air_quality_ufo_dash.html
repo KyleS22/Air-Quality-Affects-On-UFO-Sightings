@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Air Quality and U.F.O. Sightings </title>
+    <script type="text/javascript" src="d3.v5.min.js"></script>
+
+    <style>
+
+        html,body {
+            margin:0px;
+        }
+
+        svg {
+            display: block;
+            margin: 25px auto;
+        }
+        
+        line {
+            stroke: #ccc;
+            stroke-width: 1;
+        }
+
+        .panel {
+            float:left;
+        }
+
+        #right-panel{
+            text-align: center;
+            vertical-align: top;
+            box-sizing: border-box;
+            padding: 50px;
+        }
+
+        /* style for slider */
+        .slidecontainer {
+            width: 100%;
+        }
+
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 15px;
+            border-radius: 5px;
+            background: #d3d3d3;
+            outline: none;
+            opacity: 0.7;
+            -webkit-transition: .2s;
+            transition: opacity .2s;
+        }
+
+        .slider:hover {
+            opacity: 1;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #4CAF50;
+            cursor: pointer;
+        }
+
+        .slider::-moz-range-thumb {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #4CAF50;
+            cursor: pointer;
+        }
+        
+        .slider-heading {
+            font-family: sans-serif; 
+            margin-top:40px;
+        }
+
+    </style>
+
+</head>
+
+<body>
+    <div id='left-panel' class='panel'><svg></svg></div>
+    <div id='right-panel' class='panel'>
+        <h3 class='slider-heading'>Force Strength : <span id='force-value'>0.5</span></h3>
+        <div class="slidecontainer">
+            <input type="range" min="0" max="1" value="0.5" step='any' class="slider" id="slider-input">
+        </div>
+    </div>
+</body>
+
+<script type="text/javascript">
+    //Width and height
+    var w = 800;
+    var h = 400;
+
+    var bodyWidth = +d3.select("body").node().getBoundingClientRect().width;
+    var rightPanelWidth = bodyWidth - (w);
+
+    // For very small screens the control panel width would be very small and so we cap it at 500 pixels
+    d3.select('#right-panel').style('width', Math.max(rightPanelWidth, 500) + "px");
+
+    //Modify SVG element
+    var svg = d3.select("svg")
+        .attr("width", w)
+        .attr("height", h);
+
+    //Define map projection
+    var projection = d3.geoAlbersUsa()
+        .translate([w / 2, h / 2])
+        .scale([500]);
+
+    // Define path generator
+    var path = d3.geoPath()
+        .projection(projection);
+
+    //Define quantize scale to sort data values into buckets of color
+    var color = d3.scaleQuantize()
+        .range(["rgb(237,248,233)", "rgb(186,228,179)", "rgb(116,196,118)", "rgb(49,163,84)", "rgb(0,109,44)"]);
+
+    //Number formatting for population values
+    var formatAsThousands = d3.format(","); //e.g. converts 123456 to "123,456"
+
+    
+
+/**
+* Load in the air quality data, state data, and city data and merge into a usable data structure  
+*
+* TODO: return a dictionary of dictionaries?  One dict for each of the four plots
+*/
+function load_and_merge_data() {
+    // TODO: Load the three datasets and combine them
+
+    // TODO: This could be wrong but I think we need one dict for each plot so that we can manipulate the plots separately.. If so proceed with below
+
+    //Load in U.F.O. data
+    d3.csv("UFOPOLLUTANTS.csv").then(function(data) {
+
+        //Set input domain for color scale
+        color.domain([
+            d3.min(data, function(d) {
+                return d.value;
+            }),
+            d3.max(data, function(d) {
+                return d.value;
+            })
+        ]);
+
+        //Load in GeoJSON data
+        d3.json("us-states.json").then(function(json) {
+
+            //Merge the pollutant data and GeoJSON
+            //Loop through once for each pollutant data value
+            for (var i = 0; i < data.length; i++) {
+                
+                // TODO: Compute histograms of U.F.O. count for each state by year (and month?) and store in a dict of state_hists
+                // TODO: Compute histograms of U.F.O. count for each month by year and store in a dict of month_hists
+                // TODO: Compute breakdowns of pollutant AQI for each city by year as well as times of U.F.O sightings and store in a dict of city_pollutants
+                // TODO: Stuff the data below into an object we can use to create the whole map at once later on
+                // Also put pollutant breakdowns somewhere in the map data for the pie markers
+                
+                var dataState = data[i].state; //Grab state name
+                // TODO: This is the wrong attribute name
+                var dataValue = parseFloat(data[i].value); //Grab data value, and convert from string to float
+
+                //Find the corresponding state inside the GeoJSON
+                for (var j = 0; j < json.features.length; j++) {
+
+                    var jsonState = json.features[j].properties.name;
+
+                    if (dataState == jsonState) {
+
+                        //Copy the data value into the JSON
+                        // TODO: Again, the wrong attribute name, also probably want more data inserted below
+                        json.features[j].properties.value = dataValue;
+
+                        //Stop looking through the JSON
+                        break;
+
+                    }
+                }
+            }
+
+           
+            //Load in cities data and combine with U.F.O counts (probably its own dictionary?)
+            d3.csv("us-cities.csv").then(function(data) {
+                
+                
+
+            });
+
+
+        });
+
+    });
+}
+
+function draw_map() {
+     //Bind data and create one path per GeoJSON feature
+     svg.selectAll("path")
+        .data(json.features)
+        .enter()
+        .append("path")
+        .attr("d", path)
+        .style("fill", function(d) {
+            //Get data value
+            var value = d.properties.value;
+
+            if (value) {
+                //If value exists…
+                return color(value);
+            } else {
+                //If value is undefined…
+                return "#ccc";
+            }
+        });
+        
+        // Draw cities
+        svg.selectAll("circle")
+            .data(data)
+            .enter()
+            .append("circle")
+            .attr("cx", function(d) {
+                return projection([d.lon, d.lat])[0];
+            })
+            .attr("cy", function(d) {
+                return projection([d.lon, d.lat])[1];
+            })
+            .attr("r", 5)
+            .style("fill", "yellow");
+
+
+}
+
+function draw_pollutant_breakdown(){
+
+}
+
+function draw_state_hist() {
+
+}
+
+function draw_month_hist(){
+
+}
+
+</script>
+
+</html>
