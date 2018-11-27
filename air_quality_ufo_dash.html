@@ -111,174 +111,20 @@
     //Number formatting for population values
     var formatAsThousands = d3.format(","); //e.g. converts 123456 to "123,456"
 
-    // Dictionary keyed by year_month, or year_all, each element is a dictionary keyed by city
-    var year_city_dict = {}
 
     //Load in U.F.O. data
-    d3.csv("UFOPOLLUTANTS.csv").then(function(data) {
-        //Set input domain for color scale
-        color.domain([
-            d3.min(data, function(d) {
-                return d.value;
-            }),
-            d3.max(data, function(d) {
-                return d.value;
-            })
-        ]);
+    d3.csv("processed_UFO_data.json").then(function(data) {
+        
 
         //Load in GeoJSON data
         d3.json("us-states.json").then(function(states_json) {
-
-        
-            //Load in cities data and combine with U.F.O counts (probably its own dictionary?)
-            d3.csv("all_us_cities.csv").then(function(cities_data) {
-                
-                // Cache for the city locations when we get them so we don't have to find the lat and long every time we read a new data row
-                city_locations = {}
-
-                //Merge the pollutant data and GeoJSON
-                //Loop through once for each pollutant data value
-                for (var i = 0; i < data.length; i++) {
-                // TODO: Compute histograms of U.F.O. count for each state by year (and month?) and store in a dict of state_hists
-                // TODO: Compute histograms of U.F.O. count for each month by year and store in a dict of month_hists
-                // TODO: Compute breakdowns of pollutant AQI for each city by year as well as times of U.F.O sightings and store in a dict of city_pollutants
-                // TODO: Stuff the data below into an object we can use to create the whole map at once later on
-                // Also put pollutant breakdowns somewhere in the map data for the pie markers
-                
-                    // Get the relevant data from the current row
-                    data_row = data[i];
-
-                    data_city = data_row["city"];
-                    data_state = data_row["state"];
-                    data_day = parseInt(data_row["day"]);
-                    data_month = parseInt(data_row["month"]);
-                    data_year = parseInt(data_row["year"]);
-                    data_NO2_AQI = parseFloat(data_row["NO2.AQI"]);
-                    data_O3_AQI = parseFloat(data_row["O3.AQI"]);
-                    data_SO2_AQI = parseFloat(data_row["SO2.AQI"]);
-                    data_CO_AQI = parseFloat(data_row["CO.AQI"]);
-                    data_UFO_SIGHTING = parseInt(data_row["ET"]);
-                    
-                    
-                    // Get the location of the city
-                    var lat;
-                    var long;
-
-                    if(data_city in city_locations){
-                        lat = city_locations[data_city].lat;
-                        long = city_locations[data_city].long;
-                    }else{
-                        for(var j = 0; j < cities_data.length; j++){
-                            city = cities_data[j];
-
-                            if(city.City.toLowerCase() == data_city.toLowerCase()){
-                                city_locations[data_city] = {
-                                    lat: city.Latitude,
-                                    long: city.Longitude
-                                };
-
-                                lat = city.Latitude;
-                                long = city.Longitude;
-                                break;
-                            }
-                        }
-                    }
-                    
-                    // Get the city data collected for this year and month combo
-                    var city_breakdown = {};
-                    var city_breakdown_all = {};
-
-                    var year_month_key = data_year + "_" + data_month;
-                    var year_all_key = data_year + "_all";
-
-                    if(year_month_key in year_city_dict){
-                        city_breakdown = year_city_dict[year_month_key];
-                    }
-
-                    if(year_all_key in year_city_dict){
-                        city_breakdown_all = year_city_dict[year_all_key];
-                    }
-
-
-                    // Get the current cities data so we can update it
-
-                    if(data_city in city_breakdown){
-                        current_city_data = city_breakdown[data_city];
-                        current_city_data.num_sightings += data_UFO_SIGHTING;
-                        current_city_data.pollutant_breakdown.push({
-                            NO2: data_NO2_AQI,
-                                O3: data_O3_AQI,
-                                SO2: data_SO2_AQI,
-                                CO: data_CO_AQI,
-                                day: data_day,
-                                sighting: data_UFO_SIGHTING
-                            });
-                            
-                        city_breakdown[data_city] = current_city_data;
-
-                    }else{
-                        current_city_data = {
-                            num_sightings: data_UFO_SIGHTING,
-                            pollutant_breakdown: [{
-                                NO2: data_NO2_AQI,
-                                O3: data_O3_AQI,
-                                SO2: data_SO2_AQI,
-                                CO: data_CO_AQI,
-                                day: data_day,
-                                sighting: data_UFO_SIGHTING
-                            }],
-                            lat: lat,
-                            long: long,
-                        }
-
-                        city_breakdown[data_city] = current_city_data;
-                    }
-
-                    if(data_city in city_breakdown_all){
-                        current_city_data = city_breakdown[data_city];
-                        current_city_data.num_sightings += data_UFO_SIGHTING;
-                        current_city_data.pollutant_breakdown.push({
-                            NO2: data_NO2_AQI,
-                                O3: data_O3_AQI,
-                                SO2: data_SO2_AQI,
-                                CO: data_CO_AQI,
-                                day: data_day,
-                                sighting: data_UFO_SIGHTING
-                            });
-
-                        city_breakdown_all[data_city] = current_city_data;
-
-                    }else{
-                        current_city_data = {
-                            num_sightings: data_UFO_SIGHTING,
-                            pollutant_breakdown: [{
-                                NO2: data_NO2_AQI,
-                                O3: data_O3_AQI,
-                                SO2: data_SO2_AQI,
-                                CO: data_CO_AQI,
-                                day: data_day,
-                                sighting: data_UFO_SIGHTING
-                            }],
-                            lat: lat,
-                            long: long,
-                        }
-
-                        city_breakdown_all[data_city] = current_city_data;
-                    }
-
-                    year_city_dict[year_month_key] = city_breakdown;
-                    year_city_dict[year_all_key] = city_breakdown_all;
-
-                }
-                
-            });
             
-            console.log(year_city_dict);
-
+            // TODO: Use this data to draw up some sick visualizations
+        
         });
-
     });
-
+                
+                
 
 function draw_map(state_data, city_data) {
 
