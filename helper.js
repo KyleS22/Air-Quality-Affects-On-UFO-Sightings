@@ -22,8 +22,9 @@ function getPollutants(data, city, year, month)
         toRet["count"] = 0
         for (i = 1; i < 13; i++)
         {
-            if (year + "_" + i in data)
+            if (year + "_" + i in Object.keys(data))
             {
+                
                 for (p in data[year + "_" + i]["map_data"][city]["pollutants"])
                 {
                     toRet["CO"] += p["CO"]

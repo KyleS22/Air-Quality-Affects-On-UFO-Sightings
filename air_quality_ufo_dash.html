@@ -4,6 +4,7 @@
 <head>
     <meta charset="utf-8">
     <title>Air Quality and U.F.O. Sightings </title>
+    <script type="text/javascript" src="helper.js"></script>
     <script type="text/javascript" src="d3.v5.min.js"></script>
 
     <style>
@@ -122,6 +123,10 @@
             
             // TODO: Use this data to draw up some sick visualizations
             
+
+            console.log("Here");
+            console.log(getPollutants(data, "Altoona", "any", "any"));
+            console.log("There");
             city_data = data["all_all"]["map_data"];
             draw_map(states_json, city_data);
         
