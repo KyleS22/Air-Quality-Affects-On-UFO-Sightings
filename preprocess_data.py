@@ -78,6 +78,8 @@ def main():
     
     # Get pollutant breakdowns for each city
     calculate_pollutant_breakdowns()
+    calculate_sightings_by_state()
+    calculcate_sightings_by_month()
 
     # Crap out a JSON
     with open(OUTFILE, 'w') as fp:
@@ -165,6 +167,49 @@ def calculate_pollutant_breakdowns():
 
             out_data[year_month]["map_data"][city]["pollutant_pie"] = pie_chart
 
+def calculate_sightings_by_state():
+    print("\nCalculating Sightings By State")
+
+    for year_month in tqdm(out_data.keys()):
+        sightings_by_state = {}
+
+        for city in out_data[year_month]["map_data"].keys():
+            num_sightings = out_data[year_month]["map_data"][city]["num_sightings"]
+            state = out_data[year_month]["map_data"][city]["state"]
+
+            if state in sightings_by_state.keys():
+                sightings_by_state[state] += num_sightings
+            else:
+                sightings_by_state[state] = num_sightings
+
+        out_data[year_month]["sightings_by_state"] = sightings_by_state
+
+def calculcate_sightings_by_month():
+    print("\nCalculating Sightings By Month")
+
+    for year_month in tqdm(out_data.keys()):
+        if "_all" in year_month:
+            sightings_by_month = {}
+
+            for city in out_data[year_month]["map_data"].keys():
+                pollutant_data = out_data[year_month]["map_data"][city]["pollutants"]
+
+                for pollutant in pollutant_data:
+                    sighting = pollutant["ET"]
+                    month = pollutant["month"]
+
+                    if month in sightings_by_month:
+                        sightings_by_month[month] += sighting
+                    else:
+                        sightings_by_month[month] = sighting
+
+
+            current_year = year_month.split("_")[0]
+
+            for another_year_month in out_data.keys():
+                if another_year_month.split("_")[0] == current_year:
+                    out_data[another_year_month]["sightings_by_month"] = sightings_by_month
+            
 
 if __name__ == "__main__":
     main()
