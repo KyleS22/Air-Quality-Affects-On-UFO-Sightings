@@ -103,8 +103,12 @@ def add_city(city, state, day, month, year, NO2, O3, SO2, CO, ET, longitude, lat
         out_data[year_all_key] = {}
         out_data[year_all_key]["map_data"] = {}
 
+    if "all_all" not in out_data.keys():
+        out_data["all_all"] = {}
+        out_data["all_all"]["map_data"] = {}
+
     update_out_map_data(year_all_key, city, state, day, month, year, NO2, O3, SO2, CO, ET, longitude, lat)
-    
+    update_out_map_data("all_all", city, state, day, month, year, NO2, O3, SO2, CO, ET, longitude, lat)
 
 
 def update_out_map_data(key, city, state, day, month, year, NO2, O3, SO2, CO, ET, longitude, lat):
@@ -134,8 +138,10 @@ def update_out_map_data(key, city, state, day, month, year, NO2, O3, SO2, CO, ET
         out_data[key]["map_data"][city]["state"] = state
         out_data[key]["map_data"][city]["num_sightings"] = ET
         out_data[key]["map_data"][city]["longitude"] = longitude
-        out_data[key]["map_data"][city]["latitiude"] = lat
+        out_data[key]["map_data"][city]["latitude"] = lat
         out_data[key]["map_data"][city]["pollutants"] = [pollutants]
+
+
 
 
 def calculate_pollutant_breakdowns():
