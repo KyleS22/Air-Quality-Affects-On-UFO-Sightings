@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Air Quality and U.F.O. Sightings </title>
+    <title>Air Quality and U.F.O. Sightings</title>
     <script type="text/javascript" src="helper.js"></script>
     <script type="text/javascript" src="d3.v5.min.js"></script>
 
@@ -15,7 +15,7 @@
 
         svg {
             display: block;
-            margin: 25px auto;
+            /*margin: 25px auto;*/
         }
         
         line {
@@ -31,51 +31,21 @@
             text-align: center;
             vertical-align: top;
             box-sizing: border-box;
-            padding: 50px;
+            padding: 0px;
         }
 
-        /* style for slider */
-        .slidecontainer {
-            width: 100%;
+        #bottom-right-panel{
+            text-align: center;
+            vertical-align: top;
+            box-sizing: border-box;
+            padding: 0px;
         }
 
-        .slider {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 15px;
-            border-radius: 5px;
-            background: #d3d3d3;
-            outline: none;
-            opacity: 0.7;
-            -webkit-transition: .2s;
-            transition: opacity .2s;
-        }
-
-        .slider:hover {
-            opacity: 1;
-        }
-
-        .slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 25px;
-            height: 25px;
-            border-radius: 50%;
-            background: #4CAF50;
-            cursor: pointer;
-        }
-
-        .slider::-moz-range-thumb {
-            width: 25px;
-            height: 25px;
-            border-radius: 50%;
-            background: #4CAF50;
-            cursor: pointer;
-        }
-        
-        .slider-heading {
-            font-family: sans-serif; 
-            margin-top:40px;
+        #bottom-left-panel{
+            text-align: center;
+            vertical-align: top;
+            box-sizing: border-box;
+            padding: 0px;
         }
 
     </style>
@@ -83,26 +53,38 @@
 </head>
 
 <body>
+
     <div id='left-panel' class='panel'>
         <svg id="map_vis"></svg>
         <button id="toggle_markers">Toggle Pie Markers</button>
+        <select id="year_select"></select>
+        <select id="month_select"></select>
     </div>
-    <div id='right-panel' class='panel'>
-        <h3 class='slider-heading'>Force Strength : <span id='force-value'>0.5</span></h3>
-        <div class="slidecontainer">
-            <input type="range" min="0" max="1" value="0.5" step='any' class="slider" id="slider-input">
-        </div>
-    </div>
+    <div id='right-panel' class='panel'><svg id="breakdown"></svg></div>
+    <div id='bottom-left-panel' class='panel'><svg id="state_hist"></svg></div>
+    <div id='bottom-right-panel' class='panel'><svg id="month_hist"></svg></div>
+
+
 </body>
 
 <script type="text/javascript">
     //Width and height
-    var w = 800;
-    var h = 400;
+    var w = 600;
+    var h = 300;
+    var bh = 200;
 
     var bodyWidth = +d3.select("body").node().getBoundingClientRect().width;
-    var rightPanelWidth = bodyWidth - (w);
-    var mapWidth = bodyWidth - (w);
+    var bodyHeight = +d3.select("body").node().getBoundingClientRect().height;
+    var rightPanelWidth = bodyWidth - (w) - 30;
+    var mapWidth = w;
+
+    var year_select = document.getElementById("year_select");
+    var month_select = document.getElementById("month_select");
+    var opt = document.createElement("option");
+
+    opt.text = "all";
+                
+    month_select.add(opt);
 
     var currentYear = "all";
     var currentMonth = "all";
@@ -113,7 +95,9 @@
     var pie_markers = false;
 
     // For very small screens the control panel width would be very small and so we cap it at 500 pixels
-    d3.select('#right-panel').style('width', Math.max(rightPanelWidth, 500) + "px");
+    d3.select('#right-panel').style('width', Math.max(rightPanelWidth, 400) + "px").style('height', h + "px");
+    d3.select('#bottom-right-panel').style('width', Math.max(rightPanelWidth, 400) + "px").style('height', bh + "px");
+    d3.select('#bottom-left-panel').style('width', w + "px").style('height', bh + "px");
 
     
 
@@ -131,18 +115,38 @@
 
         //Load in GeoJSON data
         d3.json("us-states.json").then(function(states_json) {
-            
-            // TODO: Use this data to draw up some sick visualizations
-            
-
-            // console.log("Here");
-            // console.log(getPollutants(data, "Altoona", 2000, 10));
-            // console.log("There");
+        
             loaded_data = data;
             loaded_state_data = states_json;
 
             city_data = data["all_all"]["map_data"];
             draw_map(states_json, city_data, false);
+
+            var years = [];
+            
+            Object.keys(data).forEach(function(key, index){
+                var year = key.split("_")[0];
+                var month = key.split("_")[1];
+
+                if(years.indexOf(year) == -1){
+                    years.push(year);
+                }
+
+            })
+          
+            years.forEach(function(year, i) {
+                var opt = document.createElement("option");
+
+                opt.text = year;
+                
+                year_select.add(opt);
+
+                if(year == "all"){
+                    year_select.options[i].selected = 'selected';
+                }
+            });
+
+            
         
         });
     });
@@ -153,8 +157,119 @@
             pie_markers = !pie_markers;
             draw_map(loaded_state_data, city_data, pie_markers);
             
-        })
+        });
+
+    d3.select("#year_select")
+        .on("change", function(){
+
+            currentYear = d3.select(this).property("value");
+
+            months = get_months_for_year(currentYear, loaded_data);
+            months.push("all");
+
+            months_eng = months.map(convert_month_num_to_english);
+            
+            while(month_select.length > 0){
+                month_select.remove(month_select.length - 1);
+            }
+
+            months.forEach(function(month, i) {
+                var opt = document.createElement("option");
+
+                opt.text = months_eng[i];
+                opt.value = month;
+                
+                month_select.add(opt);
+
+                if(month == "all"){
+                    month_select.options[i].selected = 'selected';
+                }
+            });
+            
+
+            city_data = loaded_data[currentYear + "_" + currentMonth]["map_data"];
+
+            draw_map(loaded_state_data, city_data, pie_markers);
+        });
+
+    d3.select("#month_select")
+        .on("change", function(){
+
+            currentMonth = d3.select(this).property("value");
+    
+            city_data = loaded_data[currentYear + "_" + currentMonth]["map_data"];
+
+            draw_map(loaded_state_data, city_data, pie_markers);
+        });
                          
+
+function get_months_for_year(year, data){
+    var months = [];
+
+    Object.keys(data).forEach(function(key, index){
+        var key_year = key.split("_")[0];
+        var month = key.split("_")[1];
+        
+        if(year == key_year){
+            if(months.indexOf(month) == -1){
+                if(month != "all"){
+                    months.push(parseInt(month));
+                }
+            }
+        }
+
+        
+    })
+        
+    return months.sort(function(a,b){
+        return a - b;
+    });
+
+}
+
+function convert_month_num_to_english(month){
+    switch (month){
+        case 1:
+            return "JAN";
+            break;
+        case 2:
+            return "FEB";
+            break;
+        case 3:
+            return "MAR";
+            break;
+        case 4:
+            return "APR";
+            break;
+        case 5:
+            return "MAY";
+            break;
+        case 6:
+            return "JUN";
+            break;
+        case 7:
+            return "JUL";
+            break;
+        case 8:
+            return "AUG";
+            break;
+        case 9:
+            return "SEP";
+            break;
+        case 10:
+            return "OCT";
+            break;
+        case 11:
+            return "NOV";
+            break;
+        case 12:
+            return "DEC";
+            break;
+        case "all":
+            return "all";
+            break;
+    }
+}
 
 function draw_map(state_data, city_data, pie_marker=false) {
 
@@ -215,19 +330,6 @@ function draw_map(state_data, city_data, pie_marker=false) {
         .attr("class", "marker")
         .attr("d", "test");
 
-    // map_svg.selectAll("g")
-    // .data(Object.keys(city_data))
-    // .enter()
-    // .append("g")
-    // .attr("transform", function(d) {
-    //     var lon = city_data[d].longitude;
-    //     var lat = city_data[d].latitude;
-    //     projected = projection([lon,lat]);
-    //     return "translate(" + projected[0]+"," + projected[1] + ")";
-    // })
-    // .attr("class", "marker")
-    // .attr("d", "test")
-
     if(pie_marker){
         pieMarker(map_svg, city_data);
     }else{
@@ -243,9 +345,9 @@ function circle_marker(map_svg, city_data, projection){
 
     map_svg.selectAll("g.marker").selectAll("*").remove();
 
+
     map_svg.selectAll("g.marker").each(function(d) {
       
-      console.log("d");
       d3.select(this)
         .append("circle")
         .attr("r",7)
@@ -320,7 +422,7 @@ function draw_pollutant_pie_legend(map_svg, data, colour_map){
         .enter()
         .append('g')
         .attr('transform', function(d, i){
-            var offset = 0;
+            var offset = 5;
             var horizontal_position = 18;
             var vertical_position = i * 25 + offset;
             return "translate(" + horizontal_position + ", " + vertical_position + ")";
@@ -346,10 +448,12 @@ function draw_pollutant_pie_legend(map_svg, data, colour_map){
 }
 
 function draw_pollutant_breakdown(){
-
+    var map_svg = d3.select("#breakdown")
+        .attr("width", w)
+        .attr("height", h);
 }
 
-function draw_state_hist() {
+function draw_state_hist(){
 
 }
 
