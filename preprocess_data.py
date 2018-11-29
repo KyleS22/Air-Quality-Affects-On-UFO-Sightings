@@ -204,6 +204,8 @@ def update_out_map_data(key, city, state, day, month, year, NO2, O3, SO2, CO, ET
     pollutants["CO"] = CO
     pollutants["ET"] = ET
 
+    city = city.lower()
+
     if city in map_data.keys():
         out_data[key]["map_data"][city]["num_sightings"] += ET
 
