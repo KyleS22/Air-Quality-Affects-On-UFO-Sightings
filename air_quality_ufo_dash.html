@@ -83,7 +83,10 @@
 </head>
 
 <body>
-    <div id='left-panel' class='panel'><svg id="map_vis"></svg></div>
+    <div id='left-panel' class='panel'>
+        <svg id="map_vis"></svg>
+        <button id="toggle_markers">Toggle Pie Markers</button>
+    </div>
     <div id='right-panel' class='panel'>
         <h3 class='slider-heading'>Force Strength : <span id='force-value'>0.5</span></h3>
         <div class="slidecontainer">
@@ -100,6 +103,14 @@
     var bodyWidth = +d3.select("body").node().getBoundingClientRect().width;
     var rightPanelWidth = bodyWidth - (w);
     var mapWidth = bodyWidth - (w);
+
+    var currentYear = "all";
+    var currentMonth = "all";
+
+    var loaded_data;
+    var loaded_state_data;
+
+    var pie_markers = false;
 
     // For very small screens the control panel width would be very small and so we cap it at 500 pixels
     d3.select('#right-panel').style('width', Math.max(rightPanelWidth, 500) + "px");
@@ -127,13 +138,23 @@
             // console.log("Here");
             // console.log(getPollutants(data, "Altoona", 2000, 10));
             // console.log("There");
+            loaded_data = data;
+            loaded_state_data = states_json;
+
             city_data = data["all_all"]["map_data"];
-            draw_map(states_json, city_data, true);
+            draw_map(states_json, city_data, false);
         
         });
     });
-                
-                
+
+    d3.select("#toggle_markers")
+        .on("click", function(){
+            city_data = loaded_data[currentYear + "_" + currentMonth]["map_data"];
+            pie_markers = !pie_markers;
+            draw_map(loaded_state_data, city_data, pie_markers);
+            
+        })
+                         
 
 function draw_map(state_data, city_data, pie_marker=false) {
 
@@ -162,18 +183,50 @@ function draw_map(state_data, city_data, pie_marker=false) {
     .attr("stroke", "black")
     .attr("d", path);
 
-    map_svg.selectAll("g")
-    .data(Object.keys(city_data))
-    .enter()
-    .append("g")
-    .attr("transform", function(d) {
-        var lon = city_data[d].longitude;
-        var lat = city_data[d].latitude;
-        projected = projection([lon,lat]);
-        return "translate(" + projected[0]+"," + projected[1] + ")";
-    })
-    .attr("class", "marker")
-    .attr("d", "test")
+    var markers = map_svg.selectAll("g.marker")
+        .data(Object.keys(city_data));
+
+    markers
+        .exit()
+        .transition()
+        .duration(500)
+        .attr("r", 0)
+        .remove();
+
+    markers
+        .transition()
+        .duration(500)
+        .attr("transform", function(d) {
+            var lon = city_data[d].longitude;
+            var lat = city_data[d].latitude;
+            projected = projection([lon,lat]);
+            return "translate(" + projected[0]+"," + projected[1] + ")";
+        });
+
+    markers
+        .enter()
+        .append("g")
+        .attr("transform", function(d) {
+            var lon = city_data[d].longitude;
+            var lat = city_data[d].latitude;
+            projected = projection([lon,lat]);
+            return "translate(" + projected[0]+"," + projected[1] + ")";
+        })
+        .attr("class", "marker")
+        .attr("d", "test");
+
+    // map_svg.selectAll("g")
+    // .data(Object.keys(city_data))
+    // .enter()
+    // .append("g")
+    // .attr("transform", function(d) {
+    //     var lon = city_data[d].longitude;
+    //     var lat = city_data[d].latitude;
+    //     projected = projection([lon,lat]);
+    //     return "translate(" + projected[0]+"," + projected[1] + ")";
+    // })
+    // .attr("class", "marker")
+    // .attr("d", "test")
 
     if(pie_marker){
         pieMarker(map_svg, city_data);
@@ -202,6 +255,8 @@ function circle_marker(map_svg, city_data, projection){
         .attr("stroke", "black");
 
     });
+
+    remove_pollutant_pie_legend(map_svg);
     
 }
 
@@ -269,7 +324,8 @@ function draw_pollutant_pie_legend(map_svg, data, colour_map){
             var horizontal_position = 18;
             var vertical_position = i * 25 + offset;
             return "translate(" + horizontal_position + ", " + vertical_position + ")";
-        });
+        })
+        .attr("class", "legend");
 
     legend_container.append("rect")
         .attr("width", 10)
