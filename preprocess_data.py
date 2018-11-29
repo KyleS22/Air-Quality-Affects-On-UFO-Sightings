@@ -92,6 +92,7 @@ def add_city(city, state, day, month, year, NO2, O3, SO2, CO, ET, longitude, lat
     """
     year_month_key = str(year) + "_" + str(month)
     year_all_key = str(year) + "_all"
+    month_all_key = "all_" + str(month)
 
     if year_month_key not in out_data.keys():
         out_data[year_month_key] = {}
@@ -107,8 +108,13 @@ def add_city(city, state, day, month, year, NO2, O3, SO2, CO, ET, longitude, lat
         out_data["all_all"] = {}
         out_data["all_all"]["map_data"] = {}
 
+    if month_all_key not in out_data.keys():
+        out_data[month_all_key] = {}
+        out_data[month_all_key]["map_data"] = {}
+
     update_out_map_data(year_all_key, city, state, day, month, year, NO2, O3, SO2, CO, ET, longitude, lat)
     update_out_map_data("all_all", city, state, day, month, year, NO2, O3, SO2, CO, ET, longitude, lat)
+    update_out_map_data(month_all_key, city, state, day, month, year, NO2, O3, SO2, CO, ET, longitude, lat)
 
 
 def update_out_map_data(key, city, state, day, month, year, NO2, O3, SO2, CO, ET, longitude, lat):

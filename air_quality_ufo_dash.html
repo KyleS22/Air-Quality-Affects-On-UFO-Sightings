@@ -341,7 +341,7 @@ function draw_map(state_data, city_data, pie_marker=false) {
 
 function circle_marker(map_svg, city_data, projection){
     var city_color = d3.scaleQuantize()
-        .range(["rgb(196, 217, 255)", "rgb(145, 170, 216)", "rgb(88, 114, 163)", "rgb(40, 65, 112)", "rgb(17, 38, 76)", "rgb(7, 25, 58)"]);
+        .range(["rgb(196, 217, 255)", "rgb(88, 114, 163)", "rgb(17, 38, 76)"]);
 
     map_svg.selectAll("g.marker").selectAll("*").remove();
 
