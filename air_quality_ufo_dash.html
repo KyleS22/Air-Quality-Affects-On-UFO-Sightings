@@ -172,6 +172,7 @@ function draw_map(state_data, city_data, pie_marker=false) {
         projected = projection([lon,lat]);
         return "translate(" + projected[0]+"," + projected[1] + ")";
     })
+    .attr("class", "marker")
     .attr("d", "test")
 
     if(pie_marker){
@@ -187,9 +188,9 @@ function circle_marker(map_svg, city_data, projection){
     var city_color = d3.scaleQuantize()
         .range(["rgb(196, 217, 255)", "rgb(145, 170, 216)", "rgb(88, 114, 163)", "rgb(40, 65, 112)", "rgb(17, 38, 76)", "rgb(7, 25, 58)"]);
 
-    map_svg.selectAll("g").selectAll("*").remove();
+    map_svg.selectAll("g.marker").selectAll("*").remove();
 
-    map_svg.selectAll("g").each(function(d) {
+    map_svg.selectAll("g.marker").each(function(d) {
       
       console.log("d");
       d3.select(this)
@@ -205,7 +206,7 @@ function circle_marker(map_svg, city_data, projection){
 }
 
 function pieMarker(map_svg, city_data) {
-    d3.selectAll("g").selectAll("*").remove();
+    d3.selectAll("g.marker").selectAll("*").remove();
     var pieChart = d3.pie();
 
     var radius = 10;
@@ -213,8 +214,14 @@ function pieMarker(map_svg, city_data) {
     var newArc = d3.arc().outerRadius(radius).innerRadius(radius * 0.1);
 
     var set3 = ["#66c2a5","#fc8d62","#8da0cb","#e78ac3","#a6d854","#ffd92f","#e5c494"];
+
+    var pollutant_colour_scale = d3.scaleOrdinal()
+        .domain(["CO", "NO2", "O3", "SO2"])
+        .range(d3.schemeCategory10.slice(0, 4));
+
     pieChart.value(function(d) {return d});
-    d3.selectAll("g").each(function(d) {
+    
+    d3.selectAll("g.marker").each(function(d) { 
         
       var pollutants = city_data[d]["pollutant_pie"];
 
@@ -238,12 +245,49 @@ function pieMarker(map_svg, city_data) {
         .append("path")
         .attr("d", function(d) {
             return newArc(d)})
-        .style("fill", function(d,i) {return set3[i]})
-        .style("stroke", function(d,i) {return set3[i]})
+        .style("fill", function(d) {
+            return pollutant_colour_scale(d.data.key)})
+        .style("stroke", function(d) {return pollutant_colour_scale(d.data.key)})
         .style("stroke-width", "1px")
     })
-  }
 
+    draw_pollutant_pie_legend(map_svg, pieData, pollutant_colour_scale);
+}
+
+function remove_pollutant_pie_legend(map_svg){
+    map_svg.selectAll('.legend').remove();
+}
+
+function draw_pollutant_pie_legend(map_svg, data, colour_map){
+
+    var legend_container = map_svg.selectAll('.legend')
+        .data(data)
+        .enter()
+        .append('g')
+        .attr('transform', function(d, i){
+            var offset = 0;
+            var horizontal_position = 18;
+            var vertical_position = i * 25 + offset;
+            return "translate(" + horizontal_position + ", " + vertical_position + ")";
+        });
+
+    legend_container.append("rect")
+        .attr("width", 10)
+        .attr("height", 10)
+        .style("fill", function(d){
+            return colour_map(d.key);
+        });
+    
+    legend_container.append("text")
+        .attr("x", 20)
+        .attr("y", 11)
+        .text(function(d){
+            return d.key;
+        })
+        .style("font-size", '12px');
+
+
+}
 
 function draw_pollutant_breakdown(){
 
