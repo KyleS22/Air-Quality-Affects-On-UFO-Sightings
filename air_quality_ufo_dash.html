@@ -93,10 +93,14 @@
     var h = 300;
     var bh = 200;
 
+
     var bodyWidth = +d3.select("body").node().getBoundingClientRect().width;
     var bodyHeight = +d3.select("body").node().getBoundingClientRect().height;
     var rightPanelWidth = bodyWidth - (w) - 30;
     var mapWidth = w;
+
+    var state_hist_height = h;
+    var state_hist_width = w;
 
     var year_select = document.getElementById("year_select");
     var month_select = document.getElementById("month_select");
@@ -137,7 +141,10 @@
             loaded_state_data = states_json;
 
             city_data = data["all_all"]["map_data"];
+            state_hist = data["all_all"]["sightings_by_state"];
+
             draw_map(states_json, city_data, false);
+            draw_state_hist(state_hist);
             pollutant_select.style.visibility = "visible";
 
             var years = [];
@@ -237,13 +244,17 @@
             
             try{
                 city_data = loaded_data[currentYear + "_" + currentMonth]["map_data"];
+                state_hist = loaded_data[currentYear + "_" + currentMonth]["sightings_by_state"];
             }catch{
                 city_data = loaded_data[currentYear + "_all"]["map_data"];
+                state_hist = loaded_data[currentYear + "_all"]["sightings_by_state"]
                 month_select.options[month_select.length-1].selected = 'selected';
                 currentMonth = "all";
             }
 
             draw_map(loaded_state_data, city_data, pie_markers);
+           
+            draw_state_hist(state_hist);
         });
 
     d3.select("#month_select")
@@ -252,9 +263,12 @@
             currentMonth = d3.select(this).property("value");
     
             city_data = loaded_data[currentYear + "_" + currentMonth]["map_data"];
+            state_hist = loaded_data[currentYear + "_" + currentMonth]["sightings_by_state"];
 
             draw_map(loaded_state_data, city_data, pie_markers);
+            draw_state_hist(state_hist);
         });
+
 
     d3.select("#pollutant_select")
         .on("change", function(){
@@ -559,7 +573,94 @@ function draw_pollutant_breakdown(){
         .attr("height", h);
 }
 
-function draw_state_hist(){
+function draw_state_hist(state_histogram){
+
+    
+    var bar_padding = 2;
+    var bottom_offset = 20;
+    var left_offset = 10;
+    var horizontal_text_offset = 8;
+    
+
+    // Get the max of the state_histogram and use that to scale the bars;
+
+    var state_hist_svg = d3.select("#state_hist")
+        .attr("width", state_hist_width)
+        .attr("height", state_hist_height);
+
+
+
+    console.log(state_histogram);
+    
+    state_hist_svg.selectAll("rect")
+        .transition()
+        .duration(500)
+        .attr("height", function (d) {
+            if(d in Object.keys(state_histogram)){
+                return state_histogram[d] * 2;
+            }else{
+                return 0;
+            }
+        })
+        .attr("y", function(d){
+            if(d in Object.keys(state_histogram)){
+                return state_hist_height - (state_histogram[d] * 2) - bottom_offset;
+            }else{
+                return 0;
+            }
+        });
+
+
+    state_hist_svg.selectAll("rect")
+        .data(Object.keys(state_histogram))
+        .enter()
+        .append("rect")
+        .attr("x", function (d, i) {
+            return i * ((state_hist_width - left_offset) / Object.keys(state_histogram).length) + left_offset;
+        })
+        .attr("y", function (d) {
+            return state_hist_height - bottom_offset;//state_hist_height - (state_histogram[d] * 2) - bottom_offset;
+        })
+        .attr("width", function(d){
+            return state_hist_width / Object.keys(state_histogram).length - bar_padding;
+        })
+        .attr("height", function (d) {
+            return 0;//state_histogram[d] * 2;
+        })
+        .style("fill", "blue")
+        .on("mouseenter", function(){
+            d3.select(this).style("stroke", "black");
+        })
+        .on("mouseleave", function(){
+            d3.select(this).style("stroke", "none");
+        })
+        .transition()
+        .duration(500)
+        .attr("height", function (d) {
+            return state_histogram[d] * 2;
+        })
+        .attr("y", function(d){
+            return state_hist_height - (state_histogram[d] * 2) - bottom_offset;
+        })
+        
+
+    state_hist_svg.selectAll("text")
+        .data(Object.keys(state_histogram))
+        .enter()
+        .append("text")
+        .text(function(d){
+            return d.toUpperCase();
+        })
+        .attr("x", function(d, i){
+            return i * ((state_hist_width - left_offset) / Object.keys(state_histogram).length) + left_offset + horizontal_text_offset;
+        })
+        .attr("y", function(d){
+            return state_hist_height - bottom_offset + 15;
+        })
+        .attr("font-family", "sans-serif")
+        .attr("font-size", "11px")
+        .attr("fill", "black");
+
 
 }
 
