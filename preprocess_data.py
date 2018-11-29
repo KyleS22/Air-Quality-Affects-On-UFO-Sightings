@@ -28,6 +28,8 @@ out_data = {}
 cached_city_locations = {}
 
 def main():
+    IGNORED_LOCS = 0
+    LOCS = 0
     # Cache the city locations
     print("Processing City Locations:")
     with open(US_CITIES_FILE) as cities_csv:
@@ -40,10 +42,13 @@ def main():
             city_name = city[1]
             lat = float(city[5])
             longitude = float(city[6])
+            state = city[3]
 
-            cached_city_locations[city_name.lower()] = {}
-            cached_city_locations[city_name.lower()]["longitude"] = longitude
-            cached_city_locations[city_name.lower()]["latitude"] = lat
+            new_key = city_name.lower() + "_" + state.lower()
+
+            cached_city_locations[new_key] = {}
+            cached_city_locations[new_key]["longitude"] = longitude
+            cached_city_locations[new_key]["latitude"] = lat
 
     # Process Pollutant data
     print("\nProcessing Pollutant Data")
@@ -56,6 +61,7 @@ def main():
         for row in tqdm(csv.reader(lines), total=len(lines)):
             ufo_city_name = row[CITY_COL]
             state = row[STATE_COL]
+            state = convert_state_to_abbreviation(state)
             try:
                 day = int(row[DAY_COL])
                 month = int(row[MONTH_COL])
@@ -70,21 +76,85 @@ def main():
                 continue
 
             # If we have the location for the city, get it, otherwise ignore it
-            if ufo_city_name.lower() in cached_city_locations.keys():
-                city = cached_city_locations[ufo_city_name.lower()]
+            if ufo_city_name.lower() + "_" + state.lower() in cached_city_locations.keys():
+                city = cached_city_locations[ufo_city_name.lower() + "_" + state.lower()]
                 lat = city["latitude"]
                 longitude = city["longitude"]
                 add_city(ufo_city_name, state, day, month, year, NO2, O3, SO2, CO, ET, longitude, lat)
+                LOCS += 1 
+            else:
+                IGNORED_LOCS += 1
+            
     
     # Get pollutant breakdowns for each city
     calculate_pollutant_breakdowns()
     calculate_sightings_by_state()
     calculcate_sightings_by_month()
-
+    print("\nIgnored: ", IGNORED_LOCS)
+    print("\nNot: ", LOCS)
     # Crap out a JSON
     with open(OUTFILE, 'w') as fp:
         json.dump(out_data, fp, sort_keys=True, indent=4)       
                         
+
+def convert_state_to_abbreviation(state):
+    us_state_abbrev = {
+    'Alabama': 'AL',
+    'Alaska': 'AK',
+    'Arizona': 'AZ',
+    'Arkansas': 'AR',
+    'California': 'CA',
+    'Colorado': 'CO',
+    'Connecticut': 'CT',
+    'Delaware': 'DE',
+    'Florida': 'FL',
+    'Georgia': 'GA',
+    'Hawaii': 'HI',
+    'Idaho': 'ID',
+    'Illinois': 'IL',
+    'Indiana': 'IN',
+    'Iowa': 'IA',
+    'Kansas': 'KS',
+    'Kentucky': 'KY',
+    'Louisiana': 'LA',
+    'Maine': 'ME',
+    'Maryland': 'MD',
+    'Massachusetts': 'MA',
+    'Michigan': 'MI',
+    'Minnesota': 'MN',
+    'Mississippi': 'MS',
+    'Missouri': 'MO',
+    'Montana': 'MT',
+    'Nebraska': 'NE',
+    'Nevada': 'NV',
+    'New Hampshire': 'NH',
+    'New Jersey': 'NJ',
+    'New Mexico': 'NM',
+    'New York': 'NY',
+    'North Carolina': 'NC',
+    'North Dakota': 'ND',
+    'Ohio': 'OH',
+    'Oklahoma': 'OK',
+    'Oregon': 'OR',
+    'Pennsylvania': 'PA',
+    'Rhode Island': 'RI',
+    'South Carolina': 'SC',
+    'South Dakota': 'SD',
+    'Tennessee': 'TN',
+    'Texas': 'TX',
+    'Utah': 'UT',
+    'Vermont': 'VT',
+    'Virginia': 'VA',
+    'Washington': 'WA',
+    'West Virginia': 'WV',
+    'Wisconsin': 'WI',
+    'Wyoming': 'WY',
+    }
+
+    try:
+        return us_state_abbrev[state].lower()
+    except:
+        return state
 
 def add_city(city, state, day, month, year, NO2, O3, SO2, CO, ET, longitude, lat):
     """
@@ -92,6 +162,7 @@ def add_city(city, state, day, month, year, NO2, O3, SO2, CO, ET, longitude, lat
     """
     year_month_key = str(year) + "_" + str(month)
     year_all_key = str(year) + "_all"
+    month_all_key = "all_" + str(month)
 
     if year_month_key not in out_data.keys():
         out_data[year_month_key] = {}
@@ -107,8 +178,13 @@ def add_city(city, state, day, month, year, NO2, O3, SO2, CO, ET, longitude, lat
         out_data["all_all"] = {}
         out_data["all_all"]["map_data"] = {}
 
+    if month_all_key not in out_data.keys():
+        out_data[month_all_key] = {}
+        out_data[month_all_key]["map_data"] = {}
+
     update_out_map_data(year_all_key, city, state, day, month, year, NO2, O3, SO2, CO, ET, longitude, lat)
     update_out_map_data("all_all", city, state, day, month, year, NO2, O3, SO2, CO, ET, longitude, lat)
+    update_out_map_data(month_all_key, city, state, day, month, year, NO2, O3, SO2, CO, ET, longitude, lat)
 
 
 def update_out_map_data(key, city, state, day, month, year, NO2, O3, SO2, CO, ET, longitude, lat):
@@ -127,6 +203,8 @@ def update_out_map_data(key, city, state, day, month, year, NO2, O3, SO2, CO, ET
     pollutants["SO2"] = SO2
     pollutants["CO"] = CO
     pollutants["ET"] = ET
+
+    city = city.lower()
 
     if city in map_data.keys():
         out_data[key]["map_data"][city]["num_sightings"] += ET

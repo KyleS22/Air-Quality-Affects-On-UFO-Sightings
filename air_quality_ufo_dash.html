@@ -48,15 +48,42 @@
             padding: 0px;
         }
 
+
+        div.tooltip {
+            color: white;
+            position: absolute;
+            text-align: center;
+            width: 80px;
+            height: 40px;
+            padding: 2px;
+            font: 12px sans-serif;
+            background: rgba(0,0,0,.8);
+            border: 2px solid black;
+            pointer-events: none;
+        }
+
     </style>
 
 </head>
 
 <body>
-    <div id='left-panel' class='panel'><svg id="map_vis"></svg></div>
+
+    <div id='left-panel' class='panel'>
+        <svg id="map_vis"></svg>
+        <button id="toggle_markers">Toggle Pie Markers</button>
+        <select id="year_select"></select>
+        <select id="month_select"></select>
+        <select id="pollutant_select">
+            <option value="CO">CO</option>
+            <option value="NO2">NO2</option>
+            <option value="O3">O3</option>
+            <option value="SO2">SO2</option>
+        </select>
+    </div>
     <div id='right-panel' class='panel'><svg id="breakdown"></svg></div>
     <div id='bottom-left-panel' class='panel'><svg id="state_hist"></svg></div>
     <div id='bottom-right-panel' class='panel'><svg id="month_hist"></svg></div>
+
 
 </body>
 
@@ -70,6 +97,19 @@
     var bodyHeight = +d3.select("body").node().getBoundingClientRect().height;
     var rightPanelWidth = bodyWidth - (w) - 30;
     var mapWidth = w;
+
+    var year_select = document.getElementById("year_select");
+    var month_select = document.getElementById("month_select");
+    var pollutant_select = document.getElementById("pollutant_select");
+    
+    var currentYear = "all";
+    var currentMonth = "all";
+    var currentPollutant = pollutant_select.options[0].value;
+
+    var loaded_data;
+    var loaded_state_data;
+
+    var pie_markers = false;
 
     // For very small screens the control panel width would be very small and so we cap it at 500 pixels
     d3.select('#right-panel').style('width', Math.max(rightPanelWidth, 400) + "px").style('height', h + "px");
@@ -92,17 +132,210 @@
 
         //Load in GeoJSON data
         d3.json("us-states.json").then(function(states_json) {
+        
+            loaded_data = data;
+            loaded_state_data = states_json;
+
+            city_data = data["all_all"]["map_data"];
+            draw_map(states_json, city_data, false);
+            pollutant_select.style.visibility = "visible";
+
+            var years = [];
             
-            // TODO: Use this data to draw up some sick visualizations
-            
+            Object.keys(data).forEach(function(key, index){
+                var year = key.split("_")[0];
+                var month = key.split("_")[1];
+
+                if(years.indexOf(year) == -1){
+                    years.push(year);
+                }
+                
+            })
+
+            years.forEach(function(year, i) {
+                var opt = document.createElement("option");
+
+                opt.text = year;
+                
+                year_select.add(opt);
+
+                if(year == "all"){
+                    year_select.options[i].selected = 'selected';
+                }
+            });
+
+
+            months = get_months_for_year("all", loaded_data);
+            months.push("all");
+
+            months_eng = months.map(convert_month_num_to_english);
+
+            months.forEach(function(month, i) {
+                var opt = document.createElement("option");
+
+                opt.text = months_eng[i];
+                opt.value = month;
+                
+                month_select.add(opt);
+
+                if(month == "all"){
+                    month_select.options[i].selected = 'selected';
+                }
+            });
+
             city_data = data["all_all"]["map_data"];
             draw_map(states_json, city_data, true);
-            draw_pollutant_breakdown(data, "Altoona", "any");
+            draw_pollutant_breakdown(data, "none", "all");
         
         });
     });
+
+    d3.select("#toggle_markers")
+        .on("click", function(){
+            try{
+                city_data = loaded_data[currentYear + "_" + currentMonth]["map_data"];
+            }catch{
+                city_data = loaded_data[currentYear + "_all"]["map_data"];
+            }
+            pie_markers = !pie_markers;
+            draw_map(loaded_state_data, city_data, pie_markers);
+            
+
+            var pollutant_select_visible = pollutant_select.style.visibility;
+            
+            if(pollutant_select_visible == "visible"){
+                pollutant_select.style.visibility = "hidden";
+            }else{
+                pollutant_select.style.visibility = "visible";
+            }
+            
+        });
+
+    d3.select("#year_select")
+        .on("change", function(){
+
+            currentYear = d3.select(this).property("value");
+
+            months = get_months_for_year(currentYear, loaded_data);
+            months.push("all");
+
+            months_eng = months.map(convert_month_num_to_english);
+            
+            while(month_select.length > 0){
+                month_select.remove(month_select.length - 1);
+            }
+
+            months.forEach(function(month, i) {
+                var opt = document.createElement("option");
+
+                opt.text = months_eng[i];
+                opt.value = month;
                 
-                
+                month_select.add(opt);
+
+                if(month == currentMonth){
+                    month_select.options[i].selected = 'selected';
+                }
+            });
+            
+            try{
+                city_data = loaded_data[currentYear + "_" + currentMonth]["map_data"];
+            }catch{
+                city_data = loaded_data[currentYear + "_all"]["map_data"];
+                month_select.options[month_select.length-1].selected = 'selected';
+                currentMonth = "all";
+            }
+
+            draw_map(loaded_state_data, city_data, pie_markers);
+        });
+
+    d3.select("#month_select")
+        .on("change", function(){
+
+            currentMonth = d3.select(this).property("value");
+    
+            city_data = loaded_data[currentYear + "_" + currentMonth]["map_data"];
+
+            draw_map(loaded_state_data, city_data, pie_markers);
+        });
+
+    d3.select("#pollutant_select")
+        .on("change", function(){
+            currentPollutant = d3.select(this).property("value");
+
+            city_data = loaded_data[currentYear + "_" + currentMonth]["map_data"];
+
+            draw_map(loaded_state_data, city_data, pie_markers);
+        });
+                         
+
+function get_months_for_year(year, data){
+    var months = [];
+
+    Object.keys(data).forEach(function(key, index){
+        var key_year = key.split("_")[0];
+        var month = key.split("_")[1];
+        
+        if(year == key_year){
+            if(months.indexOf(month) == -1){
+                if(month != "all"){
+                    months.push(parseInt(month));
+                }
+            }
+        }
+
+        
+    })
+        
+    return months.sort(function(a,b){
+        return a - b;
+    });
+
+}
+
+function convert_month_num_to_english(month){
+    switch (month){
+        case 1:
+            return "JAN";
+            break;
+        case 2:
+            return "FEB";
+            break;
+        case 3:
+            return "MAR";
+            break;
+        case 4:
+            return "APR";
+            break;
+        case 5:
+            return "MAY";
+            break;
+        case 6:
+            return "JUN";
+            break;
+        case 7:
+            return "JUL";
+            break;
+        case 8:
+            return "AUG";
+            break;
+        case 9:
+            return "SEP";
+            break;
+        case 10:
+            return "OCT";
+            break;
+        case 11:
+            return "NOV";
+            break;
+        case 12:
+            return "DEC";
+            break;
+        case "all":
+            return "all";
+            break;
+    }
+}
 
 function draw_map(state_data, city_data, pie_marker=false) {
 
@@ -131,18 +364,60 @@ function draw_map(state_data, city_data, pie_marker=false) {
     .attr("stroke", "black")
     .attr("d", path);
 
-    map_svg.selectAll("g")
-    .data(Object.keys(city_data))
-    .enter()
-    .append("g")
-    .attr("transform", function(d) {
-        var lon = city_data[d].longitude;
-        var lat = city_data[d].latitude;
-        projected = projection([lon,lat]);
-        return "translate(" + projected[0]+"," + projected[1] + ")";
-    })
-    .attr("class", "marker")
-    .attr("d", "test")
+    var markers = map_svg.selectAll("g.marker")
+        .data(Object.keys(city_data));
+
+
+    const div = d3
+        .select('body')
+        .append('div')
+        .attr('class', 'tooltip')
+        .style('opacity', 0);
+
+    markers
+        .exit()
+        .transition()
+        .duration(500)
+        .attr("transform", "translate(1000, 1000)")
+        .remove();
+
+    markers
+        .transition()
+        .duration(500)
+        .attr("transform", function(d) {
+            var lon = city_data[d].longitude;
+            var lat = city_data[d].latitude;
+            projected = projection([lon,lat]);
+            return "translate(" + projected[0]+"," + projected[1] + ")";
+        });
+
+    markers
+        .enter()
+        .append("g")
+        .attr("transform", function(d) {
+            var lon = city_data[d].longitude;
+            var lat = city_data[d].latitude;
+            projected = projection([lon,lat]);
+            return "translate(" + projected[0]+"," + projected[1] + ")";
+        })
+        .attr("class", "marker")
+        .attr("d", "test")
+        .on("mouseover", function(d){
+            div
+            .transition()
+            .duration(200)
+            .style('opacity', 0.9);
+             div
+            .html(d + "\nSightings: " + city_data[d].num_sightings)
+            .style('left', d3.event.pageX + 'px')
+            .style('top', d3.event.pageY - 28 + 'px');
+        })
+        .on("mouseout", function(d){
+            div
+            .transition()
+            .duration(500)
+            .style('opacity', 0);
+        });
 
     if(pie_marker){
         pieMarker(map_svg, city_data);
@@ -155,22 +430,43 @@ function draw_map(state_data, city_data, pie_marker=false) {
 
 function circle_marker(map_svg, city_data, projection){
     var city_color = d3.scaleQuantize()
-        .range(["rgb(196, 217, 255)", "rgb(145, 170, 216)", "rgb(88, 114, 163)", "rgb(40, 65, 112)", "rgb(17, 38, 76)", "rgb(7, 25, 58)"]);
+        .domain([0, get_max_num_sightings(city_data)])
+        .range(["rgb(153, 192, 255)", "rgb(108, 154, 226)", "rgb(73, 120, 193)", "rgb(34, 81, 155)", "rgb(12, 51, 112)", "rgb(0, 33, 86)"]);
+
+    var pollutant_scale = d3.scaleLinear()
+        .domain([1, 80])
+        .range([5, 20]);
 
     map_svg.selectAll("g.marker").selectAll("*").remove();
 
     map_svg.selectAll("g.marker").each(function(d) {
       
-      console.log("d");
       d3.select(this)
         .append("circle")
-        .attr("r",7)
-        .style("fill", function(d){
-            return city_color(city_data[d].num_sightings);
+        .attr("r",function(d){
+            try{
+                var pollutants_for_city = city_data[d].pollutant_pie;
+            }catch{
+                return 0;
+            }
+
+            return pollutant_scale(pollutants_for_city[currentPollutant]);
         })
-        .attr("stroke", "black");
+        .style("fill", function(d){
+            try{
+                return city_color(city_data[d].num_sightings);
+            }catch{
+                return 0;
+            }
+        })
+        .attr("stroke", "black")
+        .on("click", function(d) {
+            draw_pollutant_breakdown(loaded_data, d, currentYear)
+        });
 
     });
+
+    remove_pollutant_pie_legend(map_svg);
     
 }
 
@@ -192,33 +488,37 @@ function pieMarker(map_svg, city_data) {
     
     d3.selectAll("g.marker").each(function(d) { 
         
-      var pollutants = city_data[d]["pollutant_pie"];
+        try{
+            var pollutants = city_data[d]["pollutant_pie"];
+        } catch {
+            return;
+        }
 
-      pieData = Object.entries(pollutants).map(([key, value]) => ({key,value}));
-      var pieChart = d3.pie()
-                        .sort(null)
-                        .value(function(d){
-                            return d.value;
-                        });
-    
-      d3.select(this)
-        .append("circle")
-        .attr("r",11)
-        .style("fill", "black")
-        .style("stroke","black")
+        pieData = Object.entries(pollutants).map(([key, value]) => ({key,value}));
+        var pieChart = d3.pie()
+                            .sort(null)
+                            .value(function(d){
+                                return d.value;
+                            });
+        
+        d3.select(this)
+            .append("circle")
+            .attr("r",11)
+            .style("fill", "black")
+            .style("stroke","black")
 
-      d3.select(this)
-        .selectAll("path")
-        .data(pieChart(pieData))
-        .enter()
-        .append("path")
-        .attr("d", function(d) {
-            return newArc(d)})
-        .style("fill", function(d) {
-            return pollutant_colour_scale(d.data.key)})
-        .style("stroke", function(d) {return pollutant_colour_scale(d.data.key)})
-        .style("stroke-width", "1px")
-    })
+        d3.select(this)
+            .selectAll("path")
+            .data(pieChart(pieData))
+            .enter()
+            .append("path")
+            .attr("d", function(d) {
+                return newArc(d)})
+            .style("fill", function(d) {
+                return pollutant_colour_scale(d.data.key)})
+            .style("stroke", function(d) {return pollutant_colour_scale(d.data.key)})
+            .style("stroke-width", "1px")
+    });
 
     draw_pollutant_pie_legend(map_svg, pieData, pollutant_colour_scale);
 }
@@ -234,11 +534,12 @@ function draw_pollutant_pie_legend(map_svg, data, colour_map){
         .enter()
         .append('g')
         .attr('transform', function(d, i){
-            var offset = 0;
+            var offset = 5;
             var horizontal_position = 18;
             var vertical_position = i * 25 + offset;
             return "translate(" + horizontal_position + ", " + vertical_position + ")";
-        });
+        })
+        .attr("class", "legend");
 
     legend_container.append("rect")
         .attr("width", 10)
@@ -258,7 +559,7 @@ function draw_pollutant_pie_legend(map_svg, data, colour_map){
 
 }
 
-function draw_pollutant_breakdown(data, city="none", year="any"){
+function draw_pollutant_breakdown(data, city="none", year="all"){
     if (city == "none")
     {
         return
@@ -272,17 +573,17 @@ function draw_pollutant_breakdown(data, city="none", year="any"){
     NO2 = []
 
     var x_scale = d3.scaleLinear().domain([0,12]).range([0, rightPanelWidth]);
-    var y_scale = d3.scaleLinear().domain([0,75]).range([h, 0]);
+    var y_scale = d3.scaleLinear().domain([0,150]).range([h, 0]);
      
     var line = d3.line()
                  .x(function(d) { return x_scale(d['x']); })
                  .y(function(d) { return y_scale(d['y']); });
 
-    if (year == "any")
+    if (year == "all")
     {
         for (y = 2000; y < 2009; y++)
         {
-            meas = getPollutants(data, city, y, "any")
+            meas = getPollutants(data, city, y, "all")
             if (meas.count > 0)
             {
                 SO2.push({"x": y - 1999, "y": meas.SO2})
@@ -290,7 +591,7 @@ function draw_pollutant_breakdown(data, city="none", year="any"){
                 NO2.push({"x": y - 1999, "y": meas.NO2})
                 CO.push({"x": y - 1999, "y": meas.CO})
             }
-            dataset.push(getPollutants(data, city, y, "any"))
+            dataset.push(getPollutants(data, city, y, "all"))
         }
         x_axis = ["2000", "2001", "2002", "2003", "2004", "2005", "2006", "2007", "2008"]
     }
@@ -317,13 +618,13 @@ function draw_pollutant_breakdown(data, city="none", year="any"){
         NO2.push({"x": NO2[0].x + 0.1, "y": NO2[0].y})
         CO.push({"x": CO[0].x + 0.1, "y": CO[0].y})
     }
-        console.log(SO2);
-    console.log(getUFO(data, city, year, "any"));
 
     var breakdown_svg = d3.select("#breakdown")
         .attr("width", w)
         .attr("height", h);
 
+    breakdown_svg.selectAll("path").remove();
+    
     var so2_path = breakdown_svg.append("path")
         .attr("d", line(SO2))
         .attr("stroke", "blue")
@@ -359,11 +660,11 @@ function draw_pollutant_breakdown(data, city="none", year="any"){
 
 }
 
-function draw_state_hist(data, year="any"){
+function draw_state_hist(data, year="all"){
     
 }
 
-function draw_month_hist(data, year="any"){
+function draw_month_hist(data, year="all"){
 
 }
 

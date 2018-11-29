@@ -124,3 +124,15 @@ function getUFO(data, city, year="any", month="any")
         return toRet
     }
 }
+
+function get_max_num_sightings(cities){
+    var maxSightings = 0;
+
+    Object.keys(cities).forEach(function(key, i){
+        if(cities[key].num_sightings > maxSightings){
+            maxSightings = cities[key].num_sightings;
+        }
+    })
+
+    return maxSightings;
+}
