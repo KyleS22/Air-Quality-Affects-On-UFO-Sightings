@@ -54,7 +54,7 @@
             position: absolute;
             text-align: center;
             width: 80px;
-            height: 28px;
+            height: 40px;
             padding: 2px;
             font: 12px sans-serif;
             background: rgba(0,0,0,.8);
@@ -405,7 +405,7 @@ function draw_map(state_data, city_data, pie_marker=false) {
             .duration(200)
             .style('opacity', 0.9);
              div
-            .html(d)
+            .html(d + "\nSightings: " + city_data[d].num_sightings)
             .style('left', d3.event.pageX + 'px')
             .style('top', d3.event.pageY - 28 + 'px');
         })
@@ -427,7 +427,8 @@ function draw_map(state_data, city_data, pie_marker=false) {
 
 function circle_marker(map_svg, city_data, projection){
     var city_color = d3.scaleQuantize()
-        .range(["rgb(196, 217, 255)", "rgb(88, 114, 163)", "rgb(17, 38, 76)"]);
+        .domain([0, get_max_num_sightings(city_data)])
+        .range(["rgb(153, 192, 255)", "rgb(108, 154, 226)", "rgb(73, 120, 193)", "rgb(34, 81, 155)", "rgb(12, 51, 112)", "rgb(0, 33, 86)"]);
 
     var pollutant_scale = d3.scaleLinear()
         .domain([1, 80])
