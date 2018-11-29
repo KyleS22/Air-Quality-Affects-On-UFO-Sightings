@@ -499,7 +499,7 @@ function pieMarker(map_svg, city_data) {
 
     var pollutant_colour_scale = d3.scaleOrdinal()
         .domain(["CO", "NO2", "O3", "SO2"])
-        .range(d3.schemeCategory10.slice(0, 4));
+        .range(["darkgreen", "lightgreen", "lightblue", "blue"]);
 
     pieChart.value(function(d) {return d});
     
@@ -540,7 +540,7 @@ function pieMarker(map_svg, city_data) {
 }
 
 function remove_pollutant_pie_legend(map_svg){
-    map_svg.selectAll('.legend').remove();
+    //map_svg.selectAll('.legend').remove();
 }
 
 function draw_pollutant_pie_legend(map_svg, data, colour_map){
@@ -655,7 +655,7 @@ function draw_pollutant_breakdown(data, city="none", year="all"){
 
     var no2_path = breakdown_svg.append("path")
         .attr("d", line(NO2))
-        .attr("stroke", "green")
+        .attr("stroke", "lightgreen")
         .attr("stroke-width", "2px")
         .attr("fill", "none");
 
