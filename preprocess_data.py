@@ -28,6 +28,8 @@ out_data = {}
 cached_city_locations = {}
 
 def main():
+    IGNORED_LOCS = 0
+    LOCS = 0
     # Cache the city locations
     print("Processing City Locations:")
     with open(US_CITIES_FILE) as cities_csv:
@@ -40,10 +42,13 @@ def main():
             city_name = city[1]
             lat = float(city[5])
             longitude = float(city[6])
+            state = city[3]
 
-            cached_city_locations[city_name.lower()] = {}
-            cached_city_locations[city_name.lower()]["longitude"] = longitude
-            cached_city_locations[city_name.lower()]["latitude"] = lat
+            new_key = city_name.lower() + "_" + state.lower()
+
+            cached_city_locations[new_key] = {}
+            cached_city_locations[new_key]["longitude"] = longitude
+            cached_city_locations[new_key]["latitude"] = lat
 
     # Process Pollutant data
     print("\nProcessing Pollutant Data")
@@ -70,17 +75,22 @@ def main():
                 continue
 
             # If we have the location for the city, get it, otherwise ignore it
-            if ufo_city_name.lower() in cached_city_locations.keys():
-                city = cached_city_locations[ufo_city_name.lower()]
+            if ufo_city_name.lower() + "_" + state.lower() in cached_city_locations.keys():
+                city = cached_city_locations[ufo_city_name.lower() + "_" + state.lower()]
                 lat = city["latitude"]
                 longitude = city["longitude"]
                 add_city(ufo_city_name, state, day, month, year, NO2, O3, SO2, CO, ET, longitude, lat)
+                LOCS += 1 
+            else:
+                IGNORED_LOCS += 1
+            
     
     # Get pollutant breakdowns for each city
     calculate_pollutant_breakdowns()
     calculate_sightings_by_state()
     calculcate_sightings_by_month()
-
+    print("\nIgnored: ", IGNORED_LOCS)
+    print("\nNot: ", LOCS)
     # Crap out a JSON
     with open(OUTFILE, 'w') as fp:
         json.dump(out_data, fp, sort_keys=True, indent=4)       

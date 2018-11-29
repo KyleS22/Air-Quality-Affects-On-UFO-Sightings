@@ -48,6 +48,20 @@
             padding: 0px;
         }
 
+
+        div.tooltip {
+            color: white;
+            position: absolute;
+            text-align: center;
+            width: 60px;
+            height: 28px;
+            padding: 2px;
+            font: 12px sans-serif;
+            background: rgba(0,0,0,.8);
+            border: 2px solid black;
+            pointer-events: none;
+        }
+
     </style>
 
 </head>
@@ -350,6 +364,13 @@ function draw_map(state_data, city_data, pie_marker=false) {
     var markers = map_svg.selectAll("g.marker")
         .data(Object.keys(city_data));
 
+
+    const div = d3
+        .select('body')
+        .append('div')
+        .attr('class', 'tooltip')
+        .style('opacity', 0);
+
     markers
         .exit()
         .transition()
@@ -377,7 +398,23 @@ function draw_map(state_data, city_data, pie_marker=false) {
             return "translate(" + projected[0]+"," + projected[1] + ")";
         })
         .attr("class", "marker")
-        .attr("d", "test");
+        .attr("d", "test")
+        .on("mouseover", function(d){
+            div
+            .transition()
+            .duration(200)
+            .style('opacity', 0.9);
+             div
+            .html(d)
+            .style('left', d3.event.pageX + 'px')
+            .style('top', d3.event.pageY - 28 + 'px');
+        })
+        .on("mouseout", function(d){
+            div
+            .transition()
+            .duration(500)
+            .style('opacity', 0);
+        });
 
     if(pie_marker){
         pieMarker(map_svg, city_data);
