@@ -166,7 +166,11 @@
 
     d3.select("#toggle_markers")
         .on("click", function(){
-            city_data = loaded_data[currentYear + "_" + currentMonth]["map_data"];
+            try{
+                city_data = loaded_data[currentYear + "_" + currentMonth]["map_data"];
+            }catch{
+                city_data = loaded_data[currentYear + "_all"]["map_data"];
+            }
             pie_markers = !pie_markers;
             draw_map(loaded_state_data, city_data, pie_markers);
             
@@ -204,6 +208,7 @@
             }catch{
                 city_data = loaded_data[currentYear + "_all"]["map_data"];
                 month_select.options[month_select.length-1].selected = 'selected';
+                currentMonth = "all";
             }
 
             draw_map(loaded_state_data, city_data, pie_markers);
