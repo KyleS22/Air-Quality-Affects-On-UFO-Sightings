@@ -97,6 +97,7 @@
             
             city_data = data["all_all"]["map_data"];
             draw_map(states_json, city_data, true);
+            draw_pollutant_breakdown(data, "Altoona", "any");
         
         });
     });
@@ -257,17 +258,112 @@ function draw_pollutant_pie_legend(map_svg, data, colour_map){
 
 }
 
-function draw_pollutant_breakdown(){
-    var map_svg = d3.select("#breakdown")
+function draw_pollutant_breakdown(data, city="none", year="any"){
+    if (city == "none")
+    {
+        return
+    }
+
+    dataset = []
+
+    SO2 = []
+    O3 = []
+    CO = []
+    NO2 = []
+
+    var x_scale = d3.scaleLinear().domain([0,12]).range([0, rightPanelWidth]);
+    var y_scale = d3.scaleLinear().domain([0,75]).range([h, 0]);
+     
+    var line = d3.line()
+                 .x(function(d) { return x_scale(d['x']); })
+                 .y(function(d) { return y_scale(d['y']); });
+
+    if (year == "any")
+    {
+        for (y = 2000; y < 2009; y++)
+        {
+            meas = getPollutants(data, city, y, "any")
+            if (meas.count > 0)
+            {
+                SO2.push({"x": y - 1999, "y": meas.SO2})
+                O3.push({"x": y - 1999, "y": meas.O3})
+                NO2.push({"x": y - 1999, "y": meas.NO2})
+                CO.push({"x": y - 1999, "y": meas.CO})
+            }
+            dataset.push(getPollutants(data, city, y, "any"))
+        }
+        x_axis = ["2000", "2001", "2002", "2003", "2004", "2005", "2006", "2007", "2008"]
+    }
+    else
+    {
+        for (m = 1; m < 13; m++)
+        {
+            meas = getPollutants(data, city, year, m)
+            if (meas.count > 0)
+            {
+                SO2.push({"x": m, "y": meas.SO2})
+                O3.push({"x": m, "y": meas.O3})
+                NO2.push({"x": m, "y": meas.NO2})
+                CO.push({"x": m, "y": meas.CO})
+            }
+            dataset.push(getPollutants(data, city, year, m))
+        }
+        x_axis = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    }
+    if(SO2.length == 1)
+    {
+        SO2.push({"x": SO2[0].x + 0.1, "y": SO2[0].y})
+        O3.push({"x": O3[0].x + 0.1, "y": O3[0].y})
+        NO2.push({"x": NO2[0].x + 0.1, "y": NO2[0].y})
+        CO.push({"x": CO[0].x + 0.1, "y": CO[0].y})
+    }
+        console.log(SO2);
+    console.log(getUFO(data, city, year, "any"));
+
+    var breakdown_svg = d3.select("#breakdown")
         .attr("width", w)
         .attr("height", h);
+
+    var so2_path = breakdown_svg.append("path")
+        .attr("d", line(SO2))
+        .attr("stroke", "blue")
+        .attr("stroke-width", "2px")
+        .attr("fill", "none");
+
+    var o3_path = breakdown_svg.append("path")
+        .attr("d", line(O3))
+        .attr("stroke", "lightblue")
+        .attr("stroke-width", "2px")
+        .attr("fill", "none");
+
+    var no2_path = breakdown_svg.append("path")
+        .attr("d", line(NO2))
+        .attr("stroke", "green")
+        .attr("stroke-width", "2px")
+        .attr("fill", "none");
+
+    var co_path = breakdown_svg.append("path")
+        .attr("d", line(CO))
+        .attr("stroke", "darkgreen")
+        .attr("stroke-width", "2px")
+        .attr("fill", "none");
+    
+    /*breakdown_svg.selectAll("rect")
+        .data(x_axis)
+        .enter()
+        .append("rect")
+        .attr("x", function(d, i){ return i * dataset.length; })
+        .attr("y", function(d, i){ console.log(dataset[i]); return h - dataset[i].O3; })
+        .attr("width", w / dataset.length - 15)
+        .attr("height", function(d, i){ return dataset[i].O3} )*/
+
 }
 
-function draw_state_hist(){
-
+function draw_state_hist(data, year="any"){
+    
 }
 
-function draw_month_hist(){
+function draw_month_hist(data, year="any"){
 
 }
 
