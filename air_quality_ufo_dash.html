@@ -124,11 +124,11 @@
             // TODO: Use this data to draw up some sick visualizations
             
 
-            console.log("Here");
-            console.log(getPollutants(data, "Altoona", "any", "any"));
-            console.log("There");
+            // console.log("Here");
+            // console.log(getPollutants(data, "Altoona", 2000, 10));
+            // console.log("There");
             city_data = data["all_all"]["map_data"];
-            draw_map(states_json, city_data);
+            draw_map(states_json, city_data, true);
         
         });
     });
@@ -151,9 +151,7 @@ function draw_map(state_data, city_data, pie_marker=false) {
     var path = d3.geoPath()
         .projection(projection);
 
-    var city_color = d3.scaleQuantize()
-        .range(["rgb(196, 217, 255)", "rgb(145, 170, 216)", "rgb(88, 114, 163)", "rgb(40, 65, 112)", "rgb(17, 38, 76)", "rgb(7, 25, 58)"]);
-
+   
 
     //Bind data and create one path per GeoJSON feature
     map_svg.selectAll("path")
@@ -164,46 +162,85 @@ function draw_map(state_data, city_data, pie_marker=false) {
     .attr("stroke", "black")
     .attr("d", path);
 
-    map_svg.selectAll("circle")
-        .data(Object.keys(city_data))
-        .enter()
+    map_svg.selectAll("g")
+    .data(Object.keys(city_data))
+    .enter()
+    .append("g")
+    .attr("transform", function(d) {
+        var lon = city_data[d].longitude;
+        var lat = city_data[d].latitude;
+        projected = projection([lon,lat]);
+        return "translate(" + projected[0]+"," + projected[1] + ")";
+    })
+    .attr("d", "test")
+
+    if(pie_marker){
+        pieMarker(map_svg, city_data);
+    }else{
+        circle_marker(map_svg, city_data, projection);
+    }
+
+
+}
+
+function circle_marker(map_svg, city_data, projection){
+    var city_color = d3.scaleQuantize()
+        .range(["rgb(196, 217, 255)", "rgb(145, 170, 216)", "rgb(88, 114, 163)", "rgb(40, 65, 112)", "rgb(17, 38, 76)", "rgb(7, 25, 58)"]);
+
+    map_svg.selectAll("g").selectAll("*").remove();
+
+    map_svg.selectAll("g").each(function(d) {
+      
+      console.log("d");
+      d3.select(this)
         .append("circle")
-        .attr("cx", function(d) {
-            var lon = city_data[d].longitude;
-            var lat = city_data[d].latitude;
-            return projection([lon,lat])[0];
-        })
-        .attr("cy", function(d) {
-            var lon = city_data[d].longitude;
-            var lat = city_data[d].latitude;
-            return projection([lon,lat])[1];
-        })
-        .attr("r", 7)
+        .attr("r",7)
         .style("fill", function(d){
             return city_color(city_data[d].num_sightings);
         })
         .attr("stroke", "black");
 
-
+    });
+    
 }
 
-function pieMarker() {
-    d3.selectAll("g.marker").selectAll("*").remove();
-    var pieChart = d3.layout.pie();
-    var newArc = d3.svg.arc().outerRadius(10);
+function pieMarker(map_svg, city_data) {
+    d3.selectAll("g").selectAll("*").remove();
+    var pieChart = d3.pie();
+
+    var radius = 10;
+
+    var newArc = d3.arc().outerRadius(radius).innerRadius(radius * 0.1);
+
     var set3 = ["#66c2a5","#fc8d62","#8da0cb","#e78ac3","#a6d854","#ffd92f","#e5c494"];
-
     pieChart.value(function(d) {return d});
-    d3.selectAll("g.marker").each(function(d) {
-      var pieData = d3.values(d).splice(3,7);
-      var pieChart = d3.layout.pie();
-      
-      d3.select(this).append("circle").attr("r",11).style("fill", "black").style("stroke","black")
+    d3.selectAll("g").each(function(d) {
+        
+      var pollutants = city_data[d]["pollutant_pie"];
 
-      d3.select(this).selectAll("path").data(pieChart(pieData)).enter().append("path").attr("d", function(d) {return newArc(d)})
-      .style("fill", function(d,i) {return set3[i]})
-      .style("stroke", function(d,i) {return set3[i]})
-      .style("stroke-width", "1px")
+      pieData = Object.entries(pollutants).map(([key, value]) => ({key,value}));
+      var pieChart = d3.pie()
+                        .sort(null)
+                        .value(function(d){
+                            return d.value;
+                        });
+    
+      d3.select(this)
+        .append("circle")
+        .attr("r",11)
+        .style("fill", "black")
+        .style("stroke","black")
+
+      d3.select(this)
+        .selectAll("path")
+        .data(pieChart(pieData))
+        .enter()
+        .append("path")
+        .attr("d", function(d) {
+            return newArc(d)})
+        .style("fill", function(d,i) {return set3[i]})
+        .style("stroke", function(d,i) {return set3[i]})
+        .style("stroke-width", "1px")
     })
   }
 
