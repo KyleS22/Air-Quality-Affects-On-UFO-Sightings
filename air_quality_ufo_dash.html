@@ -113,7 +113,7 @@
     var loaded_data;
     var loaded_state_data;
 
-    var pie_markers = false;
+    var pie_markers = true;
 
     // For very small screens the control panel width would be very small and so we cap it at 500 pixels
     d3.select('#right-panel').style('width', Math.max(rightPanelWidth, 400) + "px").style('height', h + "px");
@@ -143,9 +143,9 @@
             city_data = data["all_all"]["map_data"];
             state_hist = data["all_all"]["sightings_by_state"];
 
-            draw_map(states_json, city_data, false);
+            draw_map(states_json, city_data, true);
             draw_state_hist(state_hist);
-            pollutant_select.style.visibility = "visible";
+            pollutant_select.style.visibility = "hidden";
 
             var years = [];
             
@@ -189,7 +189,10 @@
                     month_select.options[i].selected = 'selected';
                 }
             });
-            
+
+            city_data = data["all_all"]["map_data"];
+            draw_map(states_json, city_data, true);
+            draw_pollutant_breakdown(data, "none", "all");
         
         });
     });
@@ -428,6 +431,9 @@ function draw_map(state_data, city_data, pie_marker=false) {
             .transition()
             .duration(500)
             .style('opacity', 0);
+        })
+        .on("click", function(d) {
+            draw_pollutant_breakdown(loaded_data, d, currentYear)
         });
 
     if(pie_marker){
@@ -470,7 +476,10 @@ function circle_marker(map_svg, city_data, projection){
                 return 0;
             }
         })
-        .attr("stroke", "black");
+        .attr("stroke", "black")
+        .on("click", function(d) {
+            draw_pollutant_breakdown(loaded_data, d, currentYear)
+        });
 
     });
 
@@ -494,8 +503,7 @@ function pieMarker(map_svg, city_data) {
 
     pieChart.value(function(d) {return d});
     
-    d3.selectAll("g.marker").each(function(d) { 
-        
+    d3.selectAll("g.marker").each(function(d) {
         try{
             var pollutants = city_data[d]["pollutant_pie"];
         } catch {
@@ -567,20 +575,113 @@ function draw_pollutant_pie_legend(map_svg, data, colour_map){
 
 }
 
-function draw_pollutant_breakdown(){
-    var map_svg = d3.select("#breakdown")
+function draw_pollutant_breakdown(data, city="none", year="all"){
+    if (city == "none")
+    {
+        return
+    }
+
+    dataset = []
+
+    SO2 = []
+    O3 = []
+    CO = []
+    NO2 = []
+
+    var x_scale = d3.scaleLinear().domain([0,12]).range([0, rightPanelWidth]);
+    var y_scale = d3.scaleLinear().domain([0,150]).range([h, 15]);
+     
+    var line = d3.line()
+                 .x(function(d) { return x_scale(d['x']); })
+                 .y(function(d) { return y_scale(d['y']); });
+
+    if (year == "all")
+    {
+        for (y = 2000; y < 2009; y++)
+        {
+            meas = getPollutants(data, city, y, "all")
+            if (meas.count > 0)
+            {
+                SO2.push({"x": y - 1999, "y": meas.SO2})
+                O3.push({"x": y - 1999, "y": meas.O3})
+                NO2.push({"x": y - 1999, "y": meas.NO2})
+                CO.push({"x": y - 1999, "y": meas.CO})
+            }
+            dataset.push(getPollutants(data, city, y, "all"))
+        }
+        x_axis = ["2000", "2001", "2002", "2003", "2004", "2005", "2006", "2007", "2008"]
+    }
+    else
+    {
+        for (m = 1; m < 13; m++)
+        {
+            meas = getPollutants(data, city, year, m)
+            if (meas.count > 0)
+            {
+                SO2.push({"x": m, "y": meas.SO2})
+                O3.push({"x": m, "y": meas.O3})
+                NO2.push({"x": m, "y": meas.NO2})
+                CO.push({"x": m, "y": meas.CO})
+            }
+            dataset.push(getPollutants(data, city, year, m))
+        }
+        x_axis = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    }
+    if(SO2.length == 1)
+    {
+        SO2.push({"x": SO2[0].x + 0.1, "y": SO2[0].y})
+        O3.push({"x": O3[0].x + 0.1, "y": O3[0].y})
+        NO2.push({"x": NO2[0].x + 0.1, "y": NO2[0].y})
+        CO.push({"x": CO[0].x + 0.1, "y": CO[0].y})
+    }
+
+    var breakdown_svg = d3.select("#breakdown")
         .attr("width", w)
         .attr("height", h);
+
+    breakdown_svg.selectAll("path").remove();
+    
+    var so2_path = breakdown_svg.append("path")
+        .attr("d", line(SO2))
+        .attr("stroke", "blue")
+        .attr("stroke-width", "2px")
+        .attr("fill", "none");
+
+    var o3_path = breakdown_svg.append("path")
+        .attr("d", line(O3))
+        .attr("stroke", "lightblue")
+        .attr("stroke-width", "2px")
+        .attr("fill", "none");
+
+    var no2_path = breakdown_svg.append("path")
+        .attr("d", line(NO2))
+        .attr("stroke", "green")
+        .attr("stroke-width", "2px")
+        .attr("fill", "none");
+
+    var co_path = breakdown_svg.append("path")
+        .attr("d", line(CO))
+        .attr("stroke", "darkgreen")
+        .attr("stroke-width", "2px")
+        .attr("fill", "none");
+    
+    /*breakdown_svg.selectAll("rect")
+        .data(x_axis)
+        .enter()
+        .append("rect")
+        .attr("x", function(d, i){ return i * dataset.length; })
+        .attr("y", function(d, i){ console.log(dataset[i]); return h - dataset[i].O3; })
+        .attr("width", w / dataset.length - 15)
+        .attr("height", function(d, i){ return dataset[i].O3} )*/
+
 }
 
 function draw_state_hist(state_histogram){
-
-    
     var bar_padding = 2;
     var bottom_offset = 20;
     var left_offset = 10;
     var horizontal_text_offset = 8;
-    
+
 
     // Get the max of the state_histogram and use that to scale the bars;
 
@@ -591,7 +692,7 @@ function draw_state_hist(state_histogram){
 
 
     console.log(state_histogram);
-    
+
     state_hist_svg.selectAll("rect")
         .transition()
         .duration(500)
@@ -661,10 +762,8 @@ function draw_state_hist(state_histogram){
         .attr("font-size", "11px")
         .attr("fill", "black");
 
-
 }
-
-function draw_month_hist(){
+function draw_month_hist(data, year="all"){
 
 }
 
