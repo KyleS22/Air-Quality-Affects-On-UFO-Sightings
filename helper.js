@@ -1,11 +1,11 @@
-function getPollutants(data, city, year="any", month="any")
+function getPollutants(data, city, year="all", month="all")
 {
     /**
      * Search the data for the average AQI for each pollutant type
      * over the specified time interval.
      */
     toRet = {"CO": 0, "NO2": 0, "O3": 0, "SO2": 0, "count": 0}
-    if(year == "any")
+    if(year == "all")
     {
         toRetY = {"CO": 0, "NO2": 0, "O3": 0, "SO2": 0, "count": 0}
         for (j = 2000; j < 2009; j++)
@@ -26,7 +26,7 @@ function getPollutants(data, city, year="any", month="any")
         }
         return toRetY
     }
-    else if(month == "any"){
+    else if(month == "all"){
         toRet["count"] = 0
         for (i = 1; i < 13; i++)
         {
@@ -75,14 +75,14 @@ function getPollutants(data, city, year="any", month="any")
     }
 }
 
-function getUFO(data, city, year="any", month="any")
+function getUFO(data, city, year="all", month="all")
 {
     /**
      * Find each UFO sighting for the specified city over the
      * specified time interval
      */
     toRet = []
-    if(year == "any")
+    if(year == "all")
     {
         toRetY = []
         for (j = 2000; j < 2009; j++)
@@ -91,7 +91,7 @@ function getUFO(data, city, year="any", month="any")
         }
         return toRetY
     }
-    else if(month == "any"){
+    else if(month == "all"){
         for (i = 1; i < 13; i++)
         {
             if (data[year + "_" + i] != undefined && data[year + "_" + i]["map_data"][city] != undefined)

@@ -486,8 +486,7 @@ function pieMarker(map_svg, city_data) {
 
     pieChart.value(function(d) {return d});
     
-    d3.selectAll("g.marker").each(function(d) { 
-        
+    d3.selectAll("g.marker").each(function(d) {
         try{
             var pollutants = city_data[d]["pollutant_pie"];
         } catch {
@@ -573,7 +572,7 @@ function draw_pollutant_breakdown(data, city="none", year="all"){
     NO2 = []
 
     var x_scale = d3.scaleLinear().domain([0,12]).range([0, rightPanelWidth]);
-    var y_scale = d3.scaleLinear().domain([0,150]).range([h, 0]);
+    var y_scale = d3.scaleLinear().domain([0,150]).range([h, 15]);
      
     var line = d3.line()
                  .x(function(d) { return x_scale(d['x']); })
