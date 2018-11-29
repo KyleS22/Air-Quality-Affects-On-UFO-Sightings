@@ -80,12 +80,7 @@
 
     var year_select = document.getElementById("year_select");
     var month_select = document.getElementById("month_select");
-    var opt = document.createElement("option");
-
-    opt.text = "all";
-                
-    month_select.add(opt);
-
+    
     var currentYear = "all";
     var currentMonth = "all";
 
@@ -131,9 +126,9 @@
                 if(years.indexOf(year) == -1){
                     years.push(year);
                 }
-
+                
             })
-          
+
             years.forEach(function(year, i) {
                 var opt = document.createElement("option");
 
@@ -146,6 +141,24 @@
                 }
             });
 
+
+            months = get_months_for_year("all", loaded_data);
+            months.push("all");
+
+            months_eng = months.map(convert_month_num_to_english);
+
+            months.forEach(function(month, i) {
+                var opt = document.createElement("option");
+
+                opt.text = months_eng[i];
+                opt.value = month;
+                
+                month_select.add(opt);
+
+                if(month == "all"){
+                    month_select.options[i].selected = 'selected';
+                }
+            });
             
         
         });
@@ -181,13 +194,17 @@
                 
                 month_select.add(opt);
 
-                if(month == "all"){
+                if(month == currentMonth){
                     month_select.options[i].selected = 'selected';
                 }
             });
             
-
-            city_data = loaded_data[currentYear + "_" + currentMonth]["map_data"];
+            try{
+                city_data = loaded_data[currentYear + "_" + currentMonth]["map_data"];
+            }catch{
+                city_data = loaded_data[currentYear + "_all"]["map_data"];
+                month_select.options[month_select.length-1].selected = 'selected';
+            }
 
             draw_map(loaded_state_data, city_data, pie_markers);
         });
@@ -305,7 +322,7 @@ function draw_map(state_data, city_data, pie_marker=false) {
         .exit()
         .transition()
         .duration(500)
-        .attr("r", 0)
+        .attr("transform", "translate(1000, 1000)")
         .remove();
 
     markers
@@ -352,7 +369,11 @@ function circle_marker(map_svg, city_data, projection){
         .append("circle")
         .attr("r",7)
         .style("fill", function(d){
-            return city_color(city_data[d].num_sightings);
+            try{
+                return city_color(city_data[d].num_sightings);
+            }catch{
+                return 0;
+            }
         })
         .attr("stroke", "black");
 
@@ -380,33 +401,37 @@ function pieMarker(map_svg, city_data) {
     
     d3.selectAll("g.marker").each(function(d) { 
         
-      var pollutants = city_data[d]["pollutant_pie"];
+        try{
+            var pollutants = city_data[d]["pollutant_pie"];
+        } catch {
+            return;
+        }
 
-      pieData = Object.entries(pollutants).map(([key, value]) => ({key,value}));
-      var pieChart = d3.pie()
-                        .sort(null)
-                        .value(function(d){
-                            return d.value;
-                        });
-    
-      d3.select(this)
-        .append("circle")
-        .attr("r",11)
-        .style("fill", "black")
-        .style("stroke","black")
+        pieData = Object.entries(pollutants).map(([key, value]) => ({key,value}));
+        var pieChart = d3.pie()
+                            .sort(null)
+                            .value(function(d){
+                                return d.value;
+                            });
+        
+        d3.select(this)
+            .append("circle")
+            .attr("r",11)
+            .style("fill", "black")
+            .style("stroke","black")
 
-      d3.select(this)
-        .selectAll("path")
-        .data(pieChart(pieData))
-        .enter()
-        .append("path")
-        .attr("d", function(d) {
-            return newArc(d)})
-        .style("fill", function(d) {
-            return pollutant_colour_scale(d.data.key)})
-        .style("stroke", function(d) {return pollutant_colour_scale(d.data.key)})
-        .style("stroke-width", "1px")
-    })
+        d3.select(this)
+            .selectAll("path")
+            .data(pieChart(pieData))
+            .enter()
+            .append("path")
+            .attr("d", function(d) {
+                return newArc(d)})
+            .style("fill", function(d) {
+                return pollutant_colour_scale(d.data.key)})
+            .style("stroke", function(d) {return pollutant_colour_scale(d.data.key)})
+            .style("stroke-width", "1px")
+    });
 
     draw_pollutant_pie_legend(map_svg, pieData, pollutant_colour_scale);
 }
