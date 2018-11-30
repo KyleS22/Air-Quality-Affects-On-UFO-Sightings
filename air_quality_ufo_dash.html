@@ -409,11 +409,8 @@ function draw_map(state_data, city_data, pie_marker=false) {
     var map_container = map_svg.append("g").attr("class", "map_container");
 
     var attachZoom = d3.zoom().on('zoom', function(d) {
-        //d3.selectAll('.map').attr('transform', d3.event.transform);
-        //console.log(d)
         map_container.attr('transform', d3.event.transform);
         zoom_scale = d3.event.transform.k;
-        console.log(d3.event.transform)
         map_container.selectAll(".marker").attr("transform", function(d) {
             var lon = city_data[d].longitude;
             var lat = city_data[d].latitude;
@@ -435,8 +432,7 @@ function draw_map(state_data, city_data, pie_marker=false) {
     .attr("class", "map")
     .attr("id", function(d)
     {
-        console.log(d.properties.name)
-        return d.properties.name
+        return d.properties.name;
     });
 
     var markers = map_container.selectAll("g.marker")
@@ -892,6 +888,7 @@ function draw_state_hist(state_histogram, month_transition=true, year_transition
     state_hist_svg.selectAll("rect")
         .on("mouseover", function(d){
             d3.select(this).style("stroke", "black").style("stroke-width", "2px");
+
             div
             .transition()
             .duration(200)
@@ -901,6 +898,9 @@ function draw_state_hist(state_histogram, month_transition=true, year_transition
             .html("Sightings: " + state_histogram[d])
             .style('left', d3.event.pageX + 'px')
             .style('top', d3.event.pageY + 'px');
+            
+            var state_id = d;
+            d3.selectAll("#" + state_id).attr("stroke-width", "5px");
 
 
         })
@@ -911,6 +911,9 @@ function draw_state_hist(state_histogram, month_transition=true, year_transition
             .transition()
             .duration(500)
             .style('opacity', 0);
+
+            var state_id = d;
+            d3.selectAll("#" + state_id).attr("stroke-width", "1px");
         })
         .transition()
         .duration(500)
@@ -961,7 +964,9 @@ function draw_state_hist(state_histogram, month_transition=true, year_transition
             .html("Sightings: " + state_histogram[d])
             .style('left', d3.event.pageX + 'px')
             .style('top', d3.event.pageY + 'px');
-
+            
+            var state_id = d;
+            d3.selectAll("#" + state_id).attr("stroke-width", "5px");
 
         })
         .on("mouseout", function(d){
@@ -971,6 +976,9 @@ function draw_state_hist(state_histogram, month_transition=true, year_transition
             .transition()
             .duration(500)
             .style('opacity', 0);
+            
+            var state_id = d;
+            d3.selectAll("#" + state_id).attr("stroke-width", "1px");        
         })
         .transition()
         .duration(500)
