@@ -731,6 +731,12 @@ function draw_state_hist(state_histogram, month_transition=true, year_transition
     var max_sightings = 0;
     var total_sightings = 0;
 
+    const div = d3
+        .select('body')
+        .append('div')
+        .attr('class', 'tooltip')
+        .style('opacity', 0);
+
 
     Object.keys(state_histogram).forEach(function(d, i){
         if(state_histogram[d] > max_sightings){
@@ -769,6 +775,51 @@ function draw_state_hist(state_histogram, month_transition=true, year_transition
             }
         });
 
+    console.log(state_histogram);
+
+    state_hist_svg.selectAll("rect")
+        .on("mouseover", function(d){
+            d3.select(this).style("stroke", "black").style("stroke-width", "2px");
+
+            div
+            .transition()
+            .duration(200)
+            .style('opacity', 0.9);
+
+             div
+            .html("Sightings: " + state_histogram[d])
+            .style('left', d3.event.pageX + 'px')
+            .style('top', d3.event.pageY + 'px');
+
+
+        })
+        .on("mouseout", function(d){
+            d3.select(this).style("stroke", "none");
+
+            div
+            .transition()
+            .duration(500)
+            .style('opacity', 0);
+        })
+        .transition()
+        .duration(500)
+        .attr("height", function (d) {
+
+            if(Object.keys(state_histogram).indexOf(d) != -1){
+                return yScale(state_histogram[d]) - bottom_offset;
+            }else{
+                return yScale(0) - bottom_offset;
+            }
+        })
+        .attr("y", function(d){
+            //return state_hist_height - (state_histogram[d] * scaling_factor) - bottom_offset;
+            if(Object.keys(state_histogram).indexOf(d) != -1){
+                return state_hist_height - yScale(state_histogram[d]);
+            }else{
+                return state_hist_height - yScale(0);
+            }
+        })
+        
 
     state_hist_svg.selectAll("rect")
         .data(Object.keys(state_histogram))
@@ -789,9 +840,26 @@ function draw_state_hist(state_histogram, month_transition=true, year_transition
         .style("fill", "blue")
         .on("mouseover", function(d){
             d3.select(this).style("stroke", "black").style("stroke-width", "2px");
+            
+            div
+            .transition()
+            .duration(200)
+            .style('opacity', 0.9);
+
+             div
+            .html("Sightings: " + state_histogram[d])
+            .style('left', d3.event.pageX + 'px')
+            .style('top', d3.event.pageY + 'px');
+
+
         })
         .on("mouseout", function(d){
             d3.select(this).style("stroke", "none");
+
+            div
+            .transition()
+            .duration(500)
+            .style('opacity', 0);
         })
         .transition()
         .duration(500)
