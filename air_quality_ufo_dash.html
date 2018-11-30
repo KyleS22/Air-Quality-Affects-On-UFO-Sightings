@@ -295,7 +295,8 @@
                 }catch{
                     city_data = loaded_data[currentYear + "_all"]["map_data"];
                 }
-                draw_map(loaded_state_data, city_data, true);
+                pie_markers = true;
+                draw_map(loaded_state_data, city_data, pie_markers);
             }
             else
             {
@@ -305,7 +306,8 @@
                 }catch{
                     city_data = loaded_data[currentYear + "_all"]["map_data"];
                 }
-                draw_map(loaded_state_data, city_data, false);
+                pie_markers = false;
+                draw_map(loaded_state_data, city_data, pie_markers);
             }
         });
                          
