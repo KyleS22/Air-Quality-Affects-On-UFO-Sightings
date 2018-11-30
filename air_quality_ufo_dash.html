@@ -696,7 +696,7 @@ function draw_state_hist(state_histogram){
         if(state_histogram[d] > max_sightings){
             max_sightings = state_histogram[d];
         }
-        total_sightings += 1;
+        total_sightings += state_histogram[d];
     })
 
     var state_hist_svg = d3.select("#state_hist")
@@ -705,6 +705,7 @@ function draw_state_hist(state_histogram){
 
 
     scaling_factor = (total_sightings/max_sightings) * 10;
+    console.log(state_histogram, max_sightings, total_sightings, scaling_factor);
 
     state_hist_svg.selectAll("rect")
         .transition()
