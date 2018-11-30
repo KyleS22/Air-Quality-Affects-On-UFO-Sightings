@@ -108,6 +108,7 @@
     
     var currentYear = "all";
     var currentMonth = "all";
+    var currentCity = "none";
     var currentPollutant = pollutant_select.options[0].value;
 
     var loaded_data;
@@ -192,7 +193,7 @@
 
             city_data = data["all_all"]["map_data"];
             draw_map(states_json, city_data, true);
-            draw_pollutant_breakdown(data, "none", "all");
+            draw_pollutant_breakdown(data, currentCity, currentYear);
         
         });
     });
@@ -222,6 +223,8 @@
         .on("change", function(){
 
             currentYear = d3.select(this).property("value");
+            console.log(currentYear);
+            draw_pollutant_breakdown(loaded_data, currentCity, currentYear);
 
             months = get_months_for_year(currentYear, loaded_data);
             months.push("all");
@@ -482,8 +485,6 @@ function circle_marker(map_svg, city_data, projection){
         });
 
     });
-
-    remove_pollutant_pie_legend(map_svg);
     
 }
 
@@ -539,10 +540,6 @@ function pieMarker(map_svg, city_data) {
     draw_pollutant_pie_legend(map_svg, pieData, pollutant_colour_scale);
 }
 
-function remove_pollutant_pie_legend(map_svg){
-    //map_svg.selectAll('.legend').remove();
-}
-
 function draw_pollutant_pie_legend(map_svg, data, colour_map){
 
     var legend_container = map_svg.selectAll('.legend')
@@ -588,8 +585,8 @@ function draw_pollutant_breakdown(data, city="none", year="all"){
     CO = []
     NO2 = []
 
-    var x_scale = d3.scaleLinear().domain([0,12]).range([0, rightPanelWidth]);
-    var y_scale = d3.scaleLinear().domain([0,150]).range([h, 15]);
+    var x_scale = d3.scaleLinear().domain([0,12]).range([5, rightPanelWidth]);
+    var y_scale = d3.scaleLinear().domain([0,150]).range([h - 15, 0]);
      
     var line = d3.line()
                  .x(function(d) { return x_scale(d['x']); })
@@ -664,16 +661,31 @@ function draw_pollutant_breakdown(data, city="none", year="all"){
         .attr("stroke", "darkgreen")
         .attr("stroke-width", "2px")
         .attr("fill", "none");
-    
-    /*breakdown_svg.selectAll("rect")
+
+    breakdown_svg.selectAll("text").remove();
+
+    var axis = breakdown_svg.selectAll("text")
         .data(x_axis)
         .enter()
-        .append("rect")
-        .attr("x", function(d, i){ return i * dataset.length; })
-        .attr("y", function(d, i){ console.log(dataset[i]); return h - dataset[i].O3; })
-        .attr("width", w / dataset.length - 15)
-        .attr("height", function(d, i){ return dataset[i].O3} )*/
+        .append("text")
+        .text(function(d){return d;})
+        .attr("y", h - 5)
+        .attr("x", function(d, i) {
+            return x_scale(i + 0.8);
+        })
+        .attr("font-family", "sans-serif")
+        .attr("font-size", "11px")
+        .attr("fill", "black");
 
+    var title = breakdown_svg.append("text")
+        .text(function(){
+            return "Pollutant Breakdown for " + city.charAt(0).toUpperCase() + city.slice(1);
+        })
+        .attr("y", 20)
+        .attr("x", rightPanelWidth / 3)
+        .attr("font-family", "sans-serif")
+        .attr("font-size", "18px")
+        .attr("fill", "black");
 }
 
 function draw_state_hist(state_histogram){
