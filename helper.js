@@ -168,17 +168,17 @@ function two_letter_to_full(code){
         case "MO":
             return "Montana";
         case "NC":
-            return "North Carolina";
+            return "NorthCarolina";
         case "NJ":
-            return "New Jersey";
+            return "NewJersey";
         case "NY":
-            return "New York";
+            return "NewYork";
         case "OR":
             return "Oregan";
         case "PA":
             return "Pennsylvania";
         case "SC":
-            return "South Carolina";
+            return "SouthCarolina";
         case "TN":
             return "Tennessee";
         case "TX":

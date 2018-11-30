@@ -433,7 +433,10 @@ function draw_map(state_data, city_data, pie_marker=false) {
     .attr("class", "map")
     .attr("id", function(d)
     {
-        return d.properties.name;
+        var state_name = d.properties.name;
+        var id = state_name.split(" ").join('');
+        console.log(id);
+        return id;
     });
 
     var markers = map_container.selectAll("g.marker")
