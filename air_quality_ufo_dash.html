@@ -428,12 +428,19 @@ function draw_map(state_data, city_data, pie_marker=false) {
             .html(d + "\nSightings: " + city_data[d].num_sightings)
             .style('left', d3.event.pageX + 'px')
             .style('top', d3.event.pageY - 28 + 'px');
+
+            d3.select(this).selectAll("circle")
+                .style("stroke", "black")
+                .style("stroke-width", "3px");
         })
         .on("mouseout", function(d){
             div
             .transition()
             .duration(500)
             .style('opacity', 0);
+
+            d3.select(this).selectAll("circle")
+                .style("stroke-width", "1px");
         })
         .on("click", function(d) {
             draw_pollutant_breakdown(loaded_data, d, currentYear)
@@ -695,8 +702,9 @@ function draw_state_hist(state_histogram){
 
     var bar_padding = 2;
     var bottom_offset = 20;
-    var left_offset = 10;
+    var left_offset = 18;
     var horizontal_text_offset = 8;
+    var top_limit = state_hist_height - 15;
 
 
     // Get the max of the state_histogram and use that to scale the bars;
@@ -715,23 +723,28 @@ function draw_state_hist(state_histogram){
         .attr("width", state_hist_width)
         .attr("height", state_hist_height);
 
+    var yScale = d3.scaleLinear()
+        .domain([0, max_sightings])
+        .range([bottom_offset, top_limit])
 
-    scaling_factor = (total_sightings/max_sightings) * 10;
-    console.log(state_histogram, max_sightings, total_sightings, scaling_factor);
+
+    scaling_factor = ((total_sightings/max_sightings) * 10);
+    console.log(state_histogram, max_sightings, yScale(max_sightings));
 
     state_hist_svg.selectAll("rect")
         .transition()
         .duration(500)
         .attr("height", function (d) {
             if(Object.keys(state_histogram).indexOf(d) != -1){
-                return state_histogram[d] * scaling_factor;
+                //return state_histogram[d] * scaling_factor;
+                return yScale(state_histogram[d]) - bottom_offset;
             }else{
                 return 0;
             }
         })
         .attr("y", function(d){
             if(Object.keys(state_histogram).indexOf(d) != -1){
-                return state_hist_height - (state_histogram[d] * scaling_factor) - bottom_offset;
+                return state_hist_height - yScale(state_histogram[d]);
             }else{
                 return state_hist_height - bottom_offset;
             }
@@ -746,13 +759,13 @@ function draw_state_hist(state_histogram){
             return i * ((state_hist_width - left_offset) / Object.keys(state_histogram).length) + left_offset;
         })
         .attr("y", function (d) {
-            return state_hist_height - bottom_offset;//state_hist_height - (state_histogram[d] * 2) - bottom_offset;
+            return state_hist_height - bottom_offset;
         })
         .attr("width", function(d){
             return state_hist_width / Object.keys(state_histogram).length - bar_padding;
         })
         .attr("height", function (d) {
-            return 0;//state_histogram[d] * 2;
+            return 0;
         })
         .style("fill", "blue")
         .on("mouseover", function(d){
@@ -764,10 +777,12 @@ function draw_state_hist(state_histogram){
         .transition()
         .duration(500)
         .attr("height", function (d) {
-            return state_histogram[d] * scaling_factor;
+            //return state_histogram[d] * scaling_factor;
+            return yScale(state_histogram[d]) - bottom_offset;
         })
         .attr("y", function(d){
-            return state_hist_height - (state_histogram[d] * scaling_factor) - bottom_offset;
+            //return state_hist_height - (state_histogram[d] * scaling_factor) - bottom_offset;
+            return state_hist_height - yScale(state_histogram[d]);
         })
     
 
@@ -787,6 +802,59 @@ function draw_state_hist(state_histogram){
         .attr("font-family", "sans-serif")
         .attr("font-size", "11px")
         .attr("fill", "black");
+
+    // Draw the axis
+    var axisX = 16;
+    var axis = state_hist_svg.append("line")
+                          .attr("x1", axisX)
+                          .attr("y1", 5)
+                         .attr("x2", axisX)
+                         .attr("y2", state_hist_height)
+                         .style("stroke-width", 1)
+                         .style("stroke", "black");
+
+    num_ticks = parseInt((state_hist_height - bottom_offset)/max_sightings);
+
+    state_hist_svg.selectAll("text.state_hist_axis")
+        .transition()
+        .duration(500)
+        .attr("y", state_hist_height)
+        .remove();
+
+    state_hist_svg.selectAll("line.state_hist_axis")
+        .transition()
+        .duration(500)
+        .attr("y", state_hist_height)
+        .remove();
+
+    for(var i = 0; i <= num_ticks; i++){
+        var label = parseInt(i * (max_sightings/num_ticks));
+
+        state_hist_svg.append("text")
+            .text(label)
+            .attr("x", axisX - 16)
+            .attr("y", state_hist_height)
+            .style("font-size", "11px")
+            .attr("class", "state_hist_axis")
+            .transition()
+            .duration(500)
+            .attr("y", state_hist_height - yScale(label))
+            
+
+        state_hist_svg.append("line")
+            .attr("x1", axisX - 1)
+            .attr("y1", state_hist_height)
+            .attr("x2", axisX + 6)
+            .attr("y2", state_hist_height)
+            .style("stroke-width", 1)
+            .style("stroke", "black")
+            .attr("class", "state_hist_axis")
+            .transition()
+            .duration(500)
+            .attr("y1", state_hist_height - yScale(label))
+            .attr("y2", state_hist_height - yScale(label));
+    }
+    
 
 }
 function draw_month_hist(data, year="all"){
