@@ -7,6 +7,8 @@ from tqdm import tqdm
 UFO_DATA_FILE = "UFOPOLLUTANTS.csv"
 US_CITIES_FILE = "all_us_cities.csv"
 
+ENCOUNTERED_STATES = []
+
 # CSV column indices to give them all meaning
 CITY_COL = 1
 STATE_COL = 2
@@ -62,6 +64,10 @@ def main():
             ufo_city_name = row[CITY_COL]
             state = row[STATE_COL]
             state = convert_state_to_abbreviation(state)
+
+            if state not in ENCOUNTERED_STATES:
+                ENCOUNTERED_STATES.append(state)
+
             try:
                 day = int(row[DAY_COL])
                 month = int(row[MONTH_COL])
@@ -265,6 +271,10 @@ def calculate_sightings_by_state():
                 sightings_by_state[state] += num_sightings
             else:
                 sightings_by_state[state] = num_sightings
+
+        for state in ENCOUNTERED_STATES:
+            if state.lower() not in sightings_by_state.keys():
+                sightings_by_state[state.lower()] = 0
 
         out_data[year_month]["sightings_by_state"] = sightings_by_state
 

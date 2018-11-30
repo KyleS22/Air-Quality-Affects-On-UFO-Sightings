@@ -414,6 +414,29 @@ function draw_map(state_data, city_data, pie_marker=false) {
         .remove();
 
     markers
+        .on("mouseover", function(d){
+            div
+            .transition()
+            .duration(200)
+            .style('opacity', 0.9);
+             div
+            .html(d + "\nSightings: " + city_data[d].num_sightings)
+            .style('left', d3.event.pageX + 'px')
+            .style('top', d3.event.pageY - 28 + 'px');
+
+            d3.select(this).selectAll("circle")
+                .style("stroke", "black")
+                .style("stroke-width", "3px");
+        })
+        .on("mouseout", function(d){
+            div
+            .transition()
+            .duration(500)
+            .style('opacity', 0);
+
+            d3.select(this).selectAll("circle")
+                .style("stroke-width", "1px");
+        })
         .transition()
         .duration(500)
         .attr("transform", function(d) {
@@ -775,12 +798,17 @@ function draw_state_hist(state_histogram, month_transition=true, year_transition
             }
         });
 
-    console.log(state_histogram);
+
+    state_hist_svg.selectAll("rect")
+        .exit()
+        .transition()
+        .duration(500)
+        .attr("height", 0)
+        .remove();
 
     state_hist_svg.selectAll("rect")
         .on("mouseover", function(d){
             d3.select(this).style("stroke", "black").style("stroke-width", "2px");
-
             div
             .transition()
             .duration(200)
