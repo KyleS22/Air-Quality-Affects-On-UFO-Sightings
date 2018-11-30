@@ -54,7 +54,13 @@
         }
 
         .row{
-            display: black;
+            display: block;
+            height: 320px;
+        }
+
+        .blank{
+            height: 20px;
+            width: 1000px;
         }
 
         div.tooltip {
@@ -78,10 +84,10 @@
     <div class="row">
         <div id='left-panel' class='panel'>
             <svg id="map_vis"></svg>
-            <button id="toggle_markers">Toggle Pie Markers</button>
-            <select id="year_select"></select>
-            <select id="month_select"></select>
-            <select id="pollutant_select">
+            <label>Year: </label><select id="year_select"></select>
+            <label>Month: </label><select id="month_select"></select>
+            <label>Pollutant: </label><select id="pollutant_select">
+                <option value="all">all</option>
                 <option value="CO">CO</option>
                 <option value="NO2">NO2</option>
                 <option value="O3">O3</option>
@@ -91,6 +97,7 @@
         </div>
         <div id='right-panel' class='panel'><svg id="breakdown"></svg></div>
     </div>
+    <div class = "blank"></div>
     <div class="row">
         <div id='bottom-left-panel' class='panel'><svg id="state_hist"></svg></div>
         <div id='bottom-right-panel' class='panel'><svg id="month_hist"></svg></div>
@@ -115,7 +122,7 @@
     var state_hist_width = w;
 
     var month_hist_height = h;
-    var month_hist_width = w;
+    var month_hist_width = rightPanelWidth;
 
     var year_select = document.getElementById("year_select");
     var month_select = document.getElementById("month_select");
@@ -124,7 +131,7 @@
     var currentYear = "all";
     var currentMonth = "all";
     var currentCity = "none";
-    var currentPollutant = pollutant_select.options[0].value;
+    var currentPollutant = "CO";
 
     var loaded_data;
     var loaded_state_data;
@@ -166,7 +173,6 @@
             draw_map(states_json, city_data, true);
             draw_state_hist(state_hist);
             draw_month_hist(month_hist);
-            pollutant_select.style.visibility = "hidden";
 
             var years = [];
             
@@ -215,27 +221,6 @@
             draw_map(states_json, city_data, true);
         });
     });
-
-    d3.select("#toggle_markers")
-        .on("click", function(){
-            try{
-                city_data = loaded_data[currentYear + "_" + currentMonth]["map_data"];
-            }catch{
-                city_data = loaded_data[currentYear + "_all"]["map_data"];
-            }
-            pie_markers = !pie_markers;
-            draw_map(loaded_state_data, city_data, pie_markers);
-            
-
-            var pollutant_select_visible = pollutant_select.style.visibility;
-            
-            if(pollutant_select_visible == "visible"){
-                pollutant_select.style.visibility = "hidden";
-            }else{
-                pollutant_select.style.visibility = "visible";
-            }
-            
-        });
 
     d3.select("#year_select")
         .on("change", function(){
@@ -302,11 +287,25 @@
 
     d3.select("#pollutant_select")
         .on("change", function(){
-            currentPollutant = d3.select(this).property("value");
-
-            city_data = loaded_data[currentYear + "_" + currentMonth]["map_data"];
-
-            draw_map(loaded_state_data, city_data, pie_markers);
+            if (d3.select(this).property("value") == "all")
+            {
+                try{
+                    city_data = loaded_data[currentYear + "_" + currentMonth]["map_data"];
+                }catch{
+                    city_data = loaded_data[currentYear + "_all"]["map_data"];
+                }
+                draw_map(loaded_state_data, city_data, true);
+            }
+            else
+            {
+                currentPollutant = d3.select(this).property("value");
+                try{
+                    city_data = loaded_data[currentYear + "_" + currentMonth]["map_data"];
+                }catch{
+                    city_data = loaded_data[currentYear + "_all"]["map_data"];
+                }
+                draw_map(loaded_state_data, city_data, false);
+            }
         });
                          
 
@@ -663,7 +662,7 @@ function draw_pollutant_breakdown(data, city="none", year="all"){
     CO = []
     NO2 = []
 
-    var x_scale = d3.scaleLinear().domain([0, 12]).range([5, rightPanelWidth]);
+    var x_scale = d3.scaleLinear().domain([0, 12]).range([5, rightPanelWidth - 10]);
     var y_scale = d3.scaleLinear().domain([0,150]).range([h - 15, 0]);
      
     var line = d3.line()
@@ -729,7 +728,7 @@ function draw_pollutant_breakdown(data, city="none", year="all"){
     }
 
     var breakdown_svg = d3.select("#breakdown")
-        .attr("width", w)
+        .attr("width", rightPanelWidth)
         .attr("height", h);
 
     breakdown_svg.selectAll("path").remove();
