@@ -108,14 +108,14 @@
 
 <script type="text/javascript">
     //Width and height
-    var w = 600;
+    var bodyWidth = +d3.select("body").node().getBoundingClientRect().width;
+    var bodyHeight = +d3.select("body").node().getBoundingClientRect().height;
+
+    var w = Math.max(600, bodyWidth/2);
     var h = 300;
     var bh = 200;
 
     var zoom_scale = 1;
-
-    var bodyWidth = +d3.select("body").node().getBoundingClientRect().width;
-    var bodyHeight = +d3.select("body").node().getBoundingClientRect().height;
     var rightPanelWidth = bodyWidth - (w) - 30;
     var mapWidth = w;
 
