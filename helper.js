@@ -87,7 +87,11 @@ function getUFO(data, city, year="all", month="all")
         toRetY = []
         for (j = 2000; j < 2009; j++)
         {
-            toRetY.concat(getUFO(data, city, j, month))
+            year_sights = getUFO(data, city, j, month)
+            for (index in year_sights)
+            {
+                toRetY.push(year_sights[index])
+            }
         }
         return toRetY
     }

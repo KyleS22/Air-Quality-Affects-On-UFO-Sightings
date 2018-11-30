@@ -193,8 +193,6 @@
 
             city_data = data["all_all"]["map_data"];
             draw_map(states_json, city_data, true);
-            draw_pollutant_breakdown(data, currentCity, currentYear);
-        
         });
     });
 
@@ -223,7 +221,6 @@
         .on("change", function(){
 
             currentYear = d3.select(this).property("value");
-            console.log(currentYear);
             draw_pollutant_breakdown(loaded_data, currentCity, currentYear);
 
             months = get_months_for_year(currentYear, loaded_data);
@@ -436,6 +433,7 @@ function draw_map(state_data, city_data, pie_marker=false) {
             .style('opacity', 0);
         })
         .on("click", function(d) {
+            currentCity = d;
             draw_pollutant_breakdown(loaded_data, d, currentYear)
         });
 
@@ -481,6 +479,7 @@ function circle_marker(map_svg, city_data, projection){
         })
         .attr("stroke", "black")
         .on("click", function(d) {
+            currentCity = d
             draw_pollutant_breakdown(loaded_data, d, currentYear)
         });
 
@@ -585,12 +584,13 @@ function draw_pollutant_breakdown(data, city="none", year="all"){
     CO = []
     NO2 = []
 
-    var x_scale = d3.scaleLinear().domain([0,12]).range([5, rightPanelWidth]);
+    var x_scale = d3.scaleLinear().domain([0, 12]).range([5, rightPanelWidth]);
     var y_scale = d3.scaleLinear().domain([0,150]).range([h - 15, 0]);
      
     var line = d3.line()
-                 .x(function(d) { return x_scale(d['x']); })
-                 .y(function(d) { return y_scale(d['y']); });
+        .defined(function(d) {return d !== null; })
+        .x(function(d) { return x_scale(d['x']); })
+        .y(function(d) { return y_scale(d['y']); });
 
     if (year == "all")
     {
@@ -604,7 +604,6 @@ function draw_pollutant_breakdown(data, city="none", year="all"){
                 NO2.push({"x": y - 1999, "y": meas.NO2})
                 CO.push({"x": y - 1999, "y": meas.CO})
             }
-            dataset.push(getPollutants(data, city, y, "all"))
         }
         x_axis = ["2000", "2001", "2002", "2003", "2004", "2005", "2006", "2007", "2008"]
     }
@@ -620,7 +619,6 @@ function draw_pollutant_breakdown(data, city="none", year="all"){
                 NO2.push({"x": m, "y": meas.NO2})
                 CO.push({"x": m, "y": meas.CO})
             }
-            dataset.push(getPollutants(data, city, year, m))
         }
         x_axis = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
     }
@@ -631,6 +629,29 @@ function draw_pollutant_breakdown(data, city="none", year="all"){
         NO2.push({"x": NO2[0].x + 0.1, "y": NO2[0].y})
         CO.push({"x": CO[0].x + 0.1, "y": CO[0].y})
     }
+
+    sighting_points = []
+    sightings = getUFO(data, city, year, "all")
+    for (index in sightings)
+    {
+        s = sightings[index] 
+        if (year == "all")
+        {
+            console.log("Y")
+            sighting_points.push({"x": s.year - 1999, "y": 0})
+            sighting_points.push({"x": s.year - 1999, "y": 100})
+            sighting_points.push(null)
+        }
+        else
+        {
+            console.log("M")
+            sighting_points.push({"x": s.month + s.day/32, "y": 0})
+            sighting_points.push({"x": s.month + s.day/32, "y": 100})
+            sighting_points.push(null)
+        }
+    }
+
+    console.log(sighting_points)
 
     var breakdown_svg = d3.select("#breakdown")
         .attr("width", w)
@@ -661,6 +682,12 @@ function draw_pollutant_breakdown(data, city="none", year="all"){
         .attr("stroke", "darkgreen")
         .attr("stroke-width", "2px")
         .attr("fill", "none");
+    
+    var UFOs = breakdown_svg.append("path")
+        .attr("d", line(sighting_points))
+        .attr("stroke", "black")
+        .attr("stroke-width", "1px")
+        .attr("fill", "none");
 
     breakdown_svg.selectAll("text").remove();
 
@@ -679,12 +706,16 @@ function draw_pollutant_breakdown(data, city="none", year="all"){
 
     var title = breakdown_svg.append("text")
         .text(function(){
-            return "Pollutant Breakdown for " + city.charAt(0).toUpperCase() + city.slice(1);
+            if (year != "all")
+            {
+                return "Pollutant AQI and Sighting Breakdown for " + city.charAt(0).toUpperCase() + city.slice(1) + " (" + year + ")";
+            }
+            return "Pollutant AQI and Sighting Breakdown for " + city.charAt(0).toUpperCase() + city.slice(1);
         })
         .attr("y", 20)
-        .attr("x", rightPanelWidth / 3)
+        .attr("x", rightPanelWidth / 8)
         .attr("font-family", "sans-serif")
-        .attr("font-size", "18px")
+        .attr("font-size", "16px")
         .attr("fill", "black");
 }
 
