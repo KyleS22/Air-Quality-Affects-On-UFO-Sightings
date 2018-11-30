@@ -220,6 +220,7 @@
 
             city_data = data["all_all"]["map_data"];
             draw_map(states_json, city_data, true);
+            draw_pollutant_breakdown(loaded_data)
         });
     });
 
@@ -677,9 +678,20 @@ function draw_pollutant_pie_legend(data, colour_map){
 }
 
 function draw_pollutant_breakdown(data, city="none", year="all"){
+
+    var breakdown_svg = d3.select("#breakdown")
+        .attr("width", rightPanelWidth)
+        .attr("height", h);
+
     if (city == "none")
     {
-        return
+        var title = breakdown_svg.append("text")
+            .text("To view a pollutant breakdown over time, click on a city.")
+            .attr("y", 140)
+            .attr("x", rightPanelWidth / 8)
+            .attr("font-size", "16px")
+            .attr("fill", "black");
+        return;
     }
 
     dataset = []
@@ -753,10 +765,6 @@ function draw_pollutant_breakdown(data, city="none", year="all"){
             sighting_points.push(null)
         }
     }
-
-    var breakdown_svg = d3.select("#breakdown")
-        .attr("width", rightPanelWidth)
-        .attr("height", h);
 
     breakdown_svg.selectAll("path").remove();
     
