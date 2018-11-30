@@ -1149,7 +1149,6 @@ function draw_month_hist(month_histogram, year_transition=true){
         .duration(500)
         .attr("height", function (d) {
             if(Object.keys(month_histogram).indexOf(d) != -1){
-                //return month_histogram[d] * scaling_factor;
                 return yScale(month_histogram[d]) - bottom_offset;
             }else{
                 return 0;
