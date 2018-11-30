@@ -907,7 +907,7 @@ function draw_state_hist(state_histogram, month_transition=true, year_transition
             .style('left', d3.event.pageX + 'px')
             .style('top', d3.event.pageY + 'px');
             
-            var state_id = d;
+            var state_id = two_letter_to_full(d.toUpperCase());
             d3.selectAll("#" + state_id).attr("stroke-width", "5px");
 
 
@@ -920,7 +920,7 @@ function draw_state_hist(state_histogram, month_transition=true, year_transition
             .duration(500)
             .style('opacity', 0);
 
-            var state_id = d;
+            var state_id = two_letter_to_full(d.toUpperCase());
             d3.selectAll("#" + state_id).attr("stroke-width", "1px");
         })
         .transition()
@@ -973,7 +973,8 @@ function draw_state_hist(state_histogram, month_transition=true, year_transition
             .style('left', d3.event.pageX + 'px')
             .style('top', d3.event.pageY + 'px');
             
-            var state_id = d;
+            var state_id = two_letter_to_full(d.toUpperCase());
+            console.log(state_id, d.toUpperCase());
             d3.selectAll("#" + state_id).attr("stroke-width", "5px");
 
         })
@@ -985,7 +986,7 @@ function draw_state_hist(state_histogram, month_transition=true, year_transition
             .duration(500)
             .style('opacity', 0);
             
-            var state_id = d;
+            var state_id = two_letter_to_full(d.toUpperCase());
             d3.selectAll("#" + state_id).attr("stroke-width", "1px");        
         })
         .transition()
