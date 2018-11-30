@@ -432,6 +432,11 @@ function draw_map(state_data, city_data, pie_marker=false) {
     .attr("stroke", "black")
     .attr("d", path)
     .attr("class", "map")
+    .attr("id", function(d)
+    {
+        console.log(d.properties.name)
+        return d.properties.name
+    })
     .call(attachZoom);
 
     var markers = map_container.selectAll("g.marker")
@@ -720,7 +725,7 @@ function draw_pollutant_breakdown(data, city="none", year="all"){
                 CO.push({"x": m, "y": meas.CO})
             }
         }
-        x_axis = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        x_axis = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
     }
     if(SO2.length == 1)
     {
@@ -810,7 +815,6 @@ function draw_pollutant_breakdown(data, city="none", year="all"){
         })
         .attr("y", 20)
         .attr("x", rightPanelWidth / 8)
-        .attr("font-family", "sans-serif")
         .attr("font-size", "16px")
         .attr("fill", "black");
 }
