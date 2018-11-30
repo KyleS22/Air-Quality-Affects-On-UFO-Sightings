@@ -295,7 +295,8 @@
                 }catch{
                     city_data = loaded_data[currentYear + "_all"]["map_data"];
                 }
-                draw_map(loaded_state_data, city_data, true);
+                pie_markers = true;
+                draw_map(loaded_state_data, city_data, pie_markers);
             }
             else
             {
@@ -305,7 +306,8 @@
                 }catch{
                     city_data = loaded_data[currentYear + "_all"]["map_data"];
                 }
-                draw_map(loaded_state_data, city_data, false);
+                pie_markers = false;
+                draw_map(loaded_state_data, city_data, pie_markers);
             }
         });
                          
@@ -431,7 +433,11 @@ function draw_map(state_data, city_data, pie_marker=false) {
     .attr("stroke", "black")
     .attr("d", path)
     .attr("class", "map")
-    //.call(attachZoom);
+    .attr("id", function(d)
+    {
+        console.log(d.properties.name)
+        return d.properties.name
+    });
 
     var markers = map_container.selectAll("g.marker")
         .data(Object.keys(city_data));
@@ -719,7 +725,7 @@ function draw_pollutant_breakdown(data, city="none", year="all"){
                 CO.push({"x": m, "y": meas.CO})
             }
         }
-        x_axis = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        x_axis = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
     }
     if(SO2.length == 1)
     {
@@ -809,7 +815,6 @@ function draw_pollutant_breakdown(data, city="none", year="all"){
         })
         .attr("y", 20)
         .attr("x", rightPanelWidth / 8)
-        .attr("font-family", "sans-serif")
         .attr("font-size", "16px")
         .attr("fill", "black");
 }
