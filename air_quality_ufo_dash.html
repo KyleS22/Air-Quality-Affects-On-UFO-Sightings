@@ -750,8 +750,8 @@ function draw_pollutant_breakdown(data, city="none", year="all"){
         }
         else
         {
-            sighting_points.push({"x": s.month + s.day/32, "y": 0})
-            sighting_points.push({"x": s.month + s.day/32, "y": 100})
+            sighting_points.push({"x": s.month + s.day/64, "y": 0})
+            sighting_points.push({"x": s.month + s.day/64, "y": 100})
             sighting_points.push(null)
         }
     }
@@ -801,7 +801,7 @@ function draw_pollutant_breakdown(data, city="none", year="all"){
         .text(function(d){return d;})
         .attr("y", h - 5)
         .attr("x", function(d, i) {
-            return x_scale(i + 0.8);
+            return x_scale(i + 0.7);
         })
         .attr("font-family", "sans-serif")
         .attr("font-size", "11px")
