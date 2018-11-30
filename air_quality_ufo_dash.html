@@ -450,7 +450,7 @@ function draw_map(state_data, city_data, pie_marker=false) {
 
 function circle_marker(map_svg, city_data, projection){
     var city_color = d3.scaleQuantize()
-        .domain([0, get_max_num_sightings(city_data)])
+        .domain([0, 8])//get_max_num_sightings(city_data)])
         .range(["rgb(153, 192, 255)", "rgb(108, 154, 226)", "rgb(73, 120, 193)", "rgb(34, 81, 155)", "rgb(12, 51, 112)", "rgb(0, 33, 86)"]);
 
     var pollutant_scale = d3.scaleLinear()
@@ -689,6 +689,10 @@ function draw_pollutant_breakdown(data, city="none", year="all"){
 }
 
 function draw_state_hist(state_histogram){
+
+    // TODO: Add tooltip to each bar with its value
+    // TODO: Add y axis that scales with bar scales
+
     var bar_padding = 2;
     var bottom_offset = 20;
     var left_offset = 10;
@@ -696,30 +700,40 @@ function draw_state_hist(state_histogram){
 
 
     // Get the max of the state_histogram and use that to scale the bars;
+    var max_sightings = 0;
+    var total_sightings = 0;
+
+
+    Object.keys(state_histogram).forEach(function(d, i){
+        if(state_histogram[d] > max_sightings){
+            max_sightings = state_histogram[d];
+        }
+        total_sightings += state_histogram[d];
+    })
 
     var state_hist_svg = d3.select("#state_hist")
         .attr("width", state_hist_width)
         .attr("height", state_hist_height);
 
 
-
-    console.log(state_histogram);
+    scaling_factor = (total_sightings/max_sightings) * 10;
+    console.log(state_histogram, max_sightings, total_sightings, scaling_factor);
 
     state_hist_svg.selectAll("rect")
         .transition()
         .duration(500)
         .attr("height", function (d) {
-            if(d in Object.keys(state_histogram)){
-                return state_histogram[d] * 2;
+            if(Object.keys(state_histogram).indexOf(d) != -1){
+                return state_histogram[d] * scaling_factor;
             }else{
                 return 0;
             }
         })
         .attr("y", function(d){
-            if(d in Object.keys(state_histogram)){
-                return state_hist_height - (state_histogram[d] * 2) - bottom_offset;
+            if(Object.keys(state_histogram).indexOf(d) != -1){
+                return state_hist_height - (state_histogram[d] * scaling_factor) - bottom_offset;
             }else{
-                return 0;
+                return state_hist_height - bottom_offset;
             }
         });
 
@@ -741,21 +755,21 @@ function draw_state_hist(state_histogram){
             return 0;//state_histogram[d] * 2;
         })
         .style("fill", "blue")
-        .on("mouseenter", function(){
-            d3.select(this).style("stroke", "black");
+        .on("mouseover", function(d){
+            d3.select(this).style("stroke", "black").style("stroke-width", "2px");
         })
-        .on("mouseleave", function(){
+        .on("mouseout", function(d){
             d3.select(this).style("stroke", "none");
         })
         .transition()
         .duration(500)
         .attr("height", function (d) {
-            return state_histogram[d] * 2;
+            return state_histogram[d] * scaling_factor;
         })
         .attr("y", function(d){
-            return state_hist_height - (state_histogram[d] * 2) - bottom_offset;
+            return state_hist_height - (state_histogram[d] * scaling_factor) - bottom_offset;
         })
-        
+    
 
     state_hist_svg.selectAll("text")
         .data(Object.keys(state_histogram))
