@@ -48,6 +48,14 @@
             padding: 0px;
         }
 
+        #legend{
+            float:right;
+            padding: 0px;
+        }
+
+        .row{
+            display: black;
+        }
 
         div.tooltip {
             color: white;
@@ -67,22 +75,26 @@
 </head>
 
 <body>
-
-    <div id='left-panel' class='panel'>
-        <svg id="map_vis"></svg>
-        <button id="toggle_markers">Toggle Pie Markers</button>
-        <select id="year_select"></select>
-        <select id="month_select"></select>
-        <select id="pollutant_select">
-            <option value="CO">CO</option>
-            <option value="NO2">NO2</option>
-            <option value="O3">O3</option>
-            <option value="SO2">SO2</option>
-        </select>
+    <div class="row">
+        <div id='left-panel' class='panel'>
+            <svg id="map_vis"></svg>
+            <button id="toggle_markers">Toggle Pie Markers</button>
+            <select id="year_select"></select>
+            <select id="month_select"></select>
+            <select id="pollutant_select">
+                <option value="CO">CO</option>
+                <option value="NO2">NO2</option>
+                <option value="O3">O3</option>
+                <option value="SO2">SO2</option>
+            </select>
+            <svg id="legend"></svg>
+        </div>
+        <div id='right-panel' class='panel'><svg id="breakdown"></svg></div>
     </div>
-    <div id='right-panel' class='panel'><svg id="breakdown"></svg></div>
-    <div id='bottom-left-panel' class='panel'><svg id="state_hist"></svg></div>
-    <div id='bottom-right-panel' class='panel'><svg id="month_hist"></svg></div>
+    <div class="row">
+        <div id='bottom-left-panel' class='panel'><svg id="state_hist"></svg></div>
+        <div id='bottom-right-panel' class='panel'><svg id="month_hist"></svg></div>
+    </div>
 
 
 </body>
@@ -367,7 +379,11 @@ function draw_map(state_data, city_data, pie_marker=false) {
     var path = d3.geoPath()
         .projection(projection);
 
-   
+
+    var attachZoom = d3.zoom().on('zoom', function(d) {
+        d3.selectAll('.map').attr('transform', d3.event.transform);
+        //d3.selectAll('.marker').attr('transform', d3.event.transform);
+    })
 
     //Bind data and create one path per GeoJSON feature
     map_svg.selectAll("path")
@@ -376,7 +392,9 @@ function draw_map(state_data, city_data, pie_marker=false) {
     .append("path")
     .attr("fill", "white")
     .attr("stroke", "black")
-    .attr("d", path);
+    .attr("d", path)
+    .attr("class", "map")
+    .call(attachZoom);
 
     var markers = map_svg.selectAll("g.marker")
         .data(Object.keys(city_data));
@@ -448,7 +466,7 @@ function draw_map(state_data, city_data, pie_marker=false) {
 
 function circle_marker(map_svg, city_data, projection){
     var city_color = d3.scaleQuantize()
-        .domain([0, 8])//get_max_num_sightings(city_data)])
+        .domain([0, 5])//get_max_num_sightings(city_data)])
         .range(["rgb(153, 192, 255)", "rgb(108, 154, 226)", "rgb(73, 120, 193)", "rgb(34, 81, 155)", "rgb(12, 51, 112)", "rgb(0, 33, 86)"]);
 
     var pollutant_scale = d3.scaleLinear()
@@ -536,19 +554,25 @@ function pieMarker(map_svg, city_data) {
             .style("stroke-width", "1px")
     });
 
-    draw_pollutant_pie_legend(map_svg, pieData, pollutant_colour_scale);
+    draw_pollutant_pie_legend(pieData, pollutant_colour_scale);
 }
 
-function draw_pollutant_pie_legend(map_svg, data, colour_map){
+function draw_pollutant_pie_legend(data, colour_map){
 
-    var legend_container = map_svg.selectAll('.legend')
+    l_w = 200
+    l_h = 20
+    var legend_svg = d3.select("#legend")
+        .attr("width", l_w)
+        .attr("height", l_h);
+
+    var legend_container = legend_svg.selectAll('#legend')
         .data(data)
         .enter()
         .append('g')
         .attr('transform', function(d, i){
             var offset = 5;
-            var horizontal_position = 18;
-            var vertical_position = i * 25 + offset;
+            var horizontal_position = i * 50 + offset;
+            var vertical_position = 5;
             return "translate(" + horizontal_position + ", " + vertical_position + ")";
         })
         .attr("class", "legend");
@@ -637,21 +661,17 @@ function draw_pollutant_breakdown(data, city="none", year="all"){
         s = sightings[index] 
         if (year == "all")
         {
-            console.log("Y")
             sighting_points.push({"x": s.year - 1999, "y": 0})
             sighting_points.push({"x": s.year - 1999, "y": 100})
             sighting_points.push(null)
         }
         else
         {
-            console.log("M")
             sighting_points.push({"x": s.month + s.day/32, "y": 0})
             sighting_points.push({"x": s.month + s.day/32, "y": 100})
             sighting_points.push(null)
         }
     }
-
-    console.log(sighting_points)
 
     var breakdown_svg = d3.select("#breakdown")
         .attr("width", w)
