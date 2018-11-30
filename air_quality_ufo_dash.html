@@ -447,7 +447,7 @@ function draw_map(state_data, city_data, pie_marker=false) {
 
 function circle_marker(map_svg, city_data, projection){
     var city_color = d3.scaleQuantize()
-        .domain([0, get_max_num_sightings(city_data)])
+        .domain([0, 8])//get_max_num_sightings(city_data)])
         .range(["rgb(153, 192, 255)", "rgb(108, 154, 226)", "rgb(73, 120, 193)", "rgb(34, 81, 155)", "rgb(12, 51, 112)", "rgb(0, 33, 86)"]);
 
     var pollutant_scale = d3.scaleLinear()
