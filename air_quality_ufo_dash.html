@@ -116,6 +116,8 @@
 
     var pie_markers = true;
 
+    var histogram_titles_drawn = false;
+
     // For very small screens the control panel width would be very small and so we cap it at 500 pixels
     d3.select('#right-panel').style('width', Math.max(rightPanelWidth, 400) + "px").style('height', h + "px");
     d3.select('#bottom-right-panel').style('width', Math.max(rightPanelWidth, 400) + "px").style('height', bh + "px");
@@ -223,7 +225,6 @@
         .on("change", function(){
 
             currentYear = d3.select(this).property("value");
-            console.log(currentYear);
             draw_pollutant_breakdown(loaded_data, currentCity, currentYear);
 
             months = get_months_for_year(currentYear, loaded_data);
@@ -248,6 +249,9 @@
                 }
             });
             
+            var state_hist_year_trans = true;
+            var state_hist_month_trans = false;
+
             try{
                 city_data = loaded_data[currentYear + "_" + currentMonth]["map_data"];
                 state_hist = loaded_data[currentYear + "_" + currentMonth]["sightings_by_state"];
@@ -256,11 +260,12 @@
                 state_hist = loaded_data[currentYear + "_all"]["sightings_by_state"]
                 month_select.options[month_select.length-1].selected = 'selected';
                 currentMonth = "all";
+                state_hist_month_trans = true;
             }
 
             draw_map(loaded_state_data, city_data, pie_markers);
            
-            draw_state_hist(state_hist);
+            draw_state_hist(state_hist, state_hist_month_trans, state_hist_year_trans);
         });
 
     d3.select("#month_select")
@@ -272,7 +277,7 @@
             state_hist = loaded_data[currentYear + "_" + currentMonth]["sightings_by_state"];
 
             draw_map(loaded_state_data, city_data, pie_markers);
-            draw_state_hist(state_hist);
+            draw_state_hist(state_hist, true, false);
         });
 
 
@@ -311,6 +316,13 @@ function get_months_for_year(year, data){
 }
 
 function convert_month_num_to_english(month){
+
+    try{
+        month = parseInt(month);
+    }catch{
+        month = month;
+    }
+
     switch (month){
         case 1:
             return "JAN";
@@ -349,6 +361,9 @@ function convert_month_num_to_english(month){
             return "DEC";
             break;
         case "all":
+            return "all";
+            break;
+        default:
             return "all";
             break;
     }
@@ -695,7 +710,7 @@ function draw_pollutant_breakdown(data, city="none", year="all"){
         .attr("fill", "black");
 }
 
-function draw_state_hist(state_histogram){
+function draw_state_hist(state_histogram, month_transition=true, year_transition=true){
 
     // TODO: Add tooltip to each bar with its value
     // TODO: Add y axis that scales with bar scales
@@ -704,7 +719,12 @@ function draw_state_hist(state_histogram){
     var bottom_offset = 20;
     var left_offset = 18;
     var horizontal_text_offset = 8;
-    var top_limit = state_hist_height - 15;
+    var top_limit = state_hist_height - 25;//15;
+
+    var main_title_length = 160
+    var title_x = state_hist_width/2 - 80;
+    var title_y = 15;
+
 
 
     // Get the max of the state_histogram and use that to scale the bars;
@@ -729,7 +749,6 @@ function draw_state_hist(state_histogram){
 
 
     scaling_factor = ((total_sightings/max_sightings) * 10);
-    console.log(state_histogram, max_sightings, yScale(max_sightings));
 
     state_hist_svg.selectAll("rect")
         .transition()
@@ -854,9 +873,63 @@ function draw_state_hist(state_histogram){
             .attr("y1", state_hist_height - yScale(label))
             .attr("y2", state_hist_height - yScale(label));
     }
+
+    // Add title
+    if(!histogram_titles_drawn){
+        state_hist_svg.append("text")
+            .text("Sightings by State: ")
+            .attr("x", title_x)
+            .attr("y", title_y)
+            .style("font-size", "16px");
+
+            histogram_titles_drawn = true;
+    }
+
+    if(month_transition){
+        state_hist_svg.selectAll("text.state_hist_month")
+            .transition()
+            .duration(500)
+            .attr("y", state_hist_height)
+            .remove();
+
+        var month_name = convert_month_num_to_english(currentMonth);
+
+        state_hist_svg.append("text")
+            .text(convert_month_num_to_english(currentMonth))
+            .attr("y", -20)
+            .attr("x", title_x + main_title_length)
+            .style("font-size", "16px")
+            .attr("class", "state_hist_month")
+            .transition()
+            .duration(500)
+            .attr("y", title_y);
+    }
+
+    if(year_transition){
+        state_hist_svg.selectAll("text.state_hist_year")
+            .transition()
+            .duration(500)
+            .attr("y", state_hist_height)
+            .remove();
+
+        state_hist_svg.append("text")
+            .text(currentYear)
+            .attr("y", -20)
+            .attr("x", title_x + main_title_length + 50)
+            .style("font-size", "16px")
+            .attr("class", "state_hist_year")
+            .transition()
+            .duration(500)
+            .attr("y", title_y);
+    }
+
+    
+
+    
     
 
 }
+
 function draw_month_hist(data, year="all"){
 
 }
