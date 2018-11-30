@@ -140,3 +140,52 @@ function get_max_num_sightings(cities){
 
     return maxSightings;
 }
+
+function two_letter_to_full(code){
+    switch (code){
+        case "AZ":
+            return "Arizona";
+        case "CA":
+            return "California";
+        case "CO":
+            return "Colorado";
+        case "FL":
+            return "Florida";
+        case "IL":
+            return "Illinois";
+        case "IN":
+            return "Indiana";
+        case "KS":
+            return "Kansas";
+        case "KY":
+            return "Kentucky";
+        case "LA":
+            return "Louisiana";
+        case "MA":
+            return "Massachusetta";
+        case "MI":
+            return "Michigan";
+        case "MO":
+            return "Montana";
+        case "NC":
+            return "North Carolina";
+        case "NJ":
+            return "New Jersey";
+        case "NY":
+            return "New York";
+        case "OR":
+            return "Oregan";
+        case "PA":
+            return "Pennsylvania";
+        case "SC":
+            return "South Carolina";
+        case "TN":
+            return "Tennessee";
+        case "TX":
+            return "Texas";
+        case "VA":
+            return "Virginia";
+        default:
+            return "none";
+    }
+}
