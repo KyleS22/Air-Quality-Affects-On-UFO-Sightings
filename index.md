@@ -1,4 +1,4 @@
-## Welcome To The Project!
+# Welcome To The Project!
 
   This site is part of a project in Information Visualization. We have created a dashboard to 
   visualize a dataset containing information on Air Quality and U.F.O. sighitngs.
