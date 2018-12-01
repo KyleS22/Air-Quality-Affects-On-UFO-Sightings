@@ -5,7 +5,7 @@
   
   The visualization can be found here: [https://kyles22.github.io/Air-Quality-Impact-On-UFO-Sightings/air_quality_ufo_dash.html](https://kyles22.github.io/Air-Quality-Impact-On-UFO-Sightings/air_quality_ufo_dash.html)
   
-## How Does It Work?
+##How Does It Work?
  
   The visualization consists of four plots. The first is a map, containing markers for the locations of each sighting. 
 The markers can be set to display a specific pollutant, or all pollutants at once using a pie chart.  If a single pollutant
