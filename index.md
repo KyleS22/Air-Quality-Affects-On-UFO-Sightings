@@ -3,7 +3,7 @@
 This site is part of a project in Information Visualization. We have created a dashboard to 
 visualize a dataset containing information on Air Quality and U.F.O. sighitngs.
 
-The visualization can be found here: [https://kyles22.github.io/Air-Quality-Impact-On-UFO-Sightings/air_quality_ufo_dash.html](https://kyles22.github.io/Air-Quality-Impact-On-UFO-Sightings/air_quality_ufo_dash.html)
+[Click here to see the Dashboard!](https://kyles22.github.io/Air-Quality-Impact-On-UFO-Sightings/air_quality_ufo_dash.html)
 
 ## How Does It Work?
 
